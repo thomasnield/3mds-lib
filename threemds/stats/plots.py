@@ -6,13 +6,13 @@ class DottedNumberLine(VGroup):
     def __init__(self, data: np.ndarray):
         super().__init__()
 
-        nl = NumberLine(x_range=[np.min(data) - 1, np.max(data) + 1],
+        self.nl = NumberLine(x_range=[np.min(data) - 1, np.max(data) + 1],
                         unit_size=1,
                         include_numbers=True,
                         ).scale_to_fit_width(12)
-        dots = VGroup(*[Dot(color=BLUE).move_to(nl.n2p(d)) for d in data])
+        self.dots = VGroup(*[Dot(color=BLUE).move_to(self.nl.n2p(d)) for d in data])
 
-        self.add(nl, dots)
+        self.add(self.nl, self.dots)
 
 class Histogram(VGroup):
     def __init__(self, data: np.ndarray,
@@ -71,7 +71,7 @@ class Histogram(VGroup):
 
         # create normal distribution plot
         axes = Axes(
-            x_range=[min_x_raw, max_x_raw],
+            x_range=[min_x_raw-1, max_x_raw],
             y_range=[0, max_y_raw],
             x_length=8,
             y_length=6
