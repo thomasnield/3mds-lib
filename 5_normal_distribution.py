@@ -1,5 +1,9 @@
+import math
+
 from manim import *
 from threemds.stats.plots import DottedNumberLine, Histogram
+from threemds.stats.formulas import NormalDistributionTex
+from threemds.probability.distributions import  NormalPDF
 
 data = np.array([65.27153711, 61.69996242, 60.98565375, 65.30031155, 63.51806848, 68.19351011
                     , 66.95478689, 64.55759847, 63.39196506, 67.54289154, 63.19717054, 67.49928145
@@ -83,3 +87,111 @@ class HistogramScene(Scene):
 
             hist = new_hist
             self.wait()
+
+
+class PDFScene(Scene):
+    def construct(self):
+
+        mean = data.mean()
+        std = data.std()
+
+        # transition histogram to PDF
+        hist = Histogram(data,
+                  bin_count=11,
+                  show_points=True,
+                  show_normal_dist=True)
+
+        norm_pdf = NormalPDF(mean=mean,
+                             std=std)
+        self.add(hist)
+        self.wait()
+        self.play(
+            FadeOut(hist.bars),
+            FadeOut(hist.dots),
+        )
+        self.wait()
+        self.play(
+            ReplacementTransform(hist.normal_dist_plot, norm_pdf.pdf_plot),
+            FadeTransform(hist.axes, norm_pdf.axes)
+        )
+        self.play(
+            Write(norm_pdf.area_range_label)
+        )
+        self.wait()
+
+        # Start highlighting areas
+        self.play(
+            Create(norm_pdf.area_plot)
+        )
+
+        self.wait()
+        norm_pdf.area_lower.set_value(mean)
+        norm_pdf.area_upper.set_value(mean)
+
+        # draw area label
+        """
+        area_label = always_redraw(lambda: MathTex(r"\sigma =", format(norm_pdf.get_area(), ".4f")) \
+            .align_to(norm_pdf.axes.get_origin(),direction=DOWN).shift(UP)
+        )
+        """
+
+        for sigma in range(1,5):
+            self.play(
+                norm_pdf.area_lower.animate.set_value(mean - std*sigma),
+                norm_pdf.area_upper.animate.set_value(mean + std*sigma)
+                #FadeIn(area_label)
+            )
+            self.wait()
+
+
+class FormulaScene(Scene):
+    def construct(self):
+        f = NormalDistributionTex()
+
+        # write formula
+        self.play(Write(f))
+        self.wait()
+
+        # highlight mu
+        self.play(
+            f.mu.animate.set_color(RED),
+            Circumscribe(f.mu)
+        )
+        self.wait()
+
+        # highlight sigma
+        self.play(
+            f.sigmas.animate.set_color(BLUE),
+            *[Circumscribe(s) for s in f.sigmas]
+        )
+
+        self.wait()
+
+        # highlight Euler's number and Pi
+        euler_constant = VGroup(MathTex("e = "), DecimalNumber(math.e.real, num_decimal_places=4, show_ellipsis=True)) \
+            .arrange(RIGHT) \
+            .to_edge(DOWN)
+
+        pi_constant = VGroup(MathTex(r"\pi = "), DecimalNumber(math.pi.real, num_decimal_places=4, show_ellipsis=True)) \
+            .arrange(RIGHT) \
+            .next_to(euler_constant, UP)
+
+        for v in euler_constant:
+            v.set_color(YELLOW)
+        for v in pi_constant:
+            v.set_color(YELLOW)
+
+        self.play(
+            f.eulers_number.animate.set_color(YELLOW),
+            Circumscribe(f.eulers_number),
+            FadeIn(euler_constant)
+        )
+        self.wait()
+        self.play(
+            f.pi.animate.set_color(YELLOW),
+            Circumscribe(f.pi),
+            FadeIn(pi_constant)
+        )
+        self.wait(1)
+        self.play(FadeOut(euler_constant), FadeOut(pi_constant))
+        self.wait()

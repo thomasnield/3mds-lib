@@ -36,6 +36,8 @@ class Histogram(VGroup):
         )
         self.add(self.barchart)
 
+        self.bars = self.barchart[0]
+        self.axes = VGroup(self.barchart[1:])
 
         # identify plot region
         min_x_raw = binned[1][0]
@@ -70,13 +72,13 @@ class Histogram(VGroup):
             self.add(self.dots)
 
         # create normal distribution plot
-        axes = Axes(
+        norm_axes = Axes(
             x_range=[min_x_raw-1, max_x_raw],
             y_range=[0, max_y_raw],
             x_length=8,
             y_length=6
         )
-        self.normal_dist_plot = axes.plot(lambda x: sp.stats.norm.pdf(x, data.mean(), data.std()),
+        self.normal_dist_plot = norm_axes.plot(lambda x: sp.stats.norm.pdf(x, data.mean(), data.std()),
                                           use_smoothing=True,
                                           color=YELLOW) \
             .stretch_to_fit_width(chart_horiz_len) \
