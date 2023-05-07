@@ -3,7 +3,7 @@ import math
 from manim import *
 from threemds.stats.plots import DottedNumberLine, Histogram
 from threemds.stats.formulas import NormalDistributionTex
-from threemds.probability.distributions import  NormalPDF
+from threemds.probability.distributions import  NormalPDF, X_LABELS, Z_SCORE_LABELS
 
 data = np.array([65.27153711, 61.69996242, 60.98565375, 65.30031155, 63.51806848, 68.19351011
                     , 66.95478689, 64.55759847, 63.39196506, 67.54289154, 63.19717054, 67.49928145
@@ -88,8 +88,48 @@ class HistogramScene(Scene):
             hist = new_hist
             self.wait()
 
-
 class PDFScene(Scene):
+    def construct(self):
+
+        normpdf1 = NormalPDF(mean=data.mean(),std=data.std(), show_x_axis_labels=X_LABELS)
+        normpdf2 = NormalPDF(mean=data.mean(),std=data.std()*2, show_x_axis_labels=X_LABELS)
+        normpdf3 = NormalPDF(mean=data.mean(),std=data.std()*3, show_x_axis_labels=X_LABELS)
+
+        mu_tracker = ValueTracker(data.mean())
+        sigma_tracker = ValueTracker(data.std())
+
+        mu_sigma_label = always_redraw(lambda: MathTex(r"\mu &= ",
+                                                       round(mu_tracker.get_value(),2),
+                                                       r"\\ \sigma &= ",
+                                                       round(sigma_tracker.get_value(),2)
+                                                       ).to_edge(UR, buff=.5)
+                                       )
+        self.play(Create(normpdf1), Write(mu_sigma_label))
+        self.wait()
+        normpdf1.save_state()
+        self.play(Transform(normpdf1.pdf_plot, normpdf2.pdf_plot),
+                  Transform(normpdf1.x_labels, normpdf2.x_labels),
+                  sigma_tracker.animate.set_value(data.std() * 2))
+        self.wait()
+        self.play(Transform(normpdf1.pdf_plot, normpdf3.pdf_plot),
+                  Transform(normpdf1.x_labels, normpdf3.x_labels),
+                  sigma_tracker.animate.set_value(data.std() * 2))
+        self.wait()
+        self.play(Restore(normpdf1), sigma_tracker.animate.set_value(data.std()))
+        self.wait()
+
+        # move mean around
+        self.play(
+            Transform(normpdf1.pdf_plot,
+                      normpdf1.copy().shift(RIGHT * normpdf1.axes.c2p(data.mean() + data.std(),0)[0]).pdf_plot
+                      ),
+            mu_tracker.animate.set_value(data.mean() + data.std())
+        )
+        self.wait()
+        self.play(Restore(normpdf1), mu_tracker.animate.set_value(data.mean()))
+        self.wait()
+
+class PDFAreaScene(Scene):
     def construct(self):
 
         mean = data.mean()
@@ -102,7 +142,8 @@ class PDFScene(Scene):
                   show_normal_dist=True)
 
         norm_pdf = NormalPDF(mean=mean,
-                             std=std)
+                             std=std,
+                             show_area_plot=True)
         self.add(hist)
         self.wait()
         self.play(
