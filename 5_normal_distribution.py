@@ -112,37 +112,43 @@ class PDFScene(Scene):
         self.wait()
         self.play(
             ReplacementTransform(hist.normal_dist_plot, norm_pdf.pdf_plot),
-            FadeTransform(hist.axes, norm_pdf.axes)
+            FadeTransform(hist.axes, VGroup(norm_pdf.axes, norm_pdf.x_labels)),
         )
         self.play(
             Write(norm_pdf.area_range_label)
         )
         self.wait()
 
-        # Start highlighting areas
+        # Start highlighting areas for 1 through 4 standard deviations
         self.play(
             Create(norm_pdf.area_plot)
         )
 
         self.wait()
-        norm_pdf.area_lower.set_value(mean)
-        norm_pdf.area_upper.set_value(mean)
+        norm_pdf.area_lower_range.set_value(mean)
+        norm_pdf.area_upper_range.set_value(mean)
 
-        # draw area label
-        """
-        area_label = always_redraw(lambda: MathTex(r"\sigma =", format(norm_pdf.get_area(), ".4f")) \
-            .align_to(norm_pdf.axes.get_origin(),direction=DOWN).shift(UP)
-        )
-        """
-
-        for sigma in range(1,5):
+        for sigma in range(1,4):
             self.play(
-                norm_pdf.area_lower.animate.set_value(mean - std*sigma),
-                norm_pdf.area_upper.animate.set_value(mean + std*sigma)
-                #FadeIn(area_label)
+                norm_pdf.area_lower_range.animate.set_value(mean - std * sigma),
+                norm_pdf.area_upper_range.animate.set_value(mean + std * sigma)
             )
             self.wait()
 
+
+        # switch to sigma mode
+        self.play(
+            ReplacementTransform(norm_pdf.x_labels, norm_pdf.x_sigma_labels),
+            ReplacementTransform(norm_pdf.area_range_label, norm_pdf.sigma_area_range_label)
+        )
+        self.wait()
+
+        for sigma in range(1,4):
+            self.play(
+                norm_pdf.area_lower_range.animate.set_value(mean - std * sigma),
+                norm_pdf.area_upper_range.animate.set_value(mean + std * sigma)
+            )
+            self.wait()
 
 class FormulaScene(Scene):
     def construct(self):
