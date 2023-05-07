@@ -242,3 +242,11 @@ class FormulaScene(Scene):
         self.wait(1)
         self.play(FadeOut(euler_constant), FadeOut(pi_constant))
         self.wait()
+
+class CDFScene(Scene):
+    def construct(self):
+        pass
+
+class InverseCDF(Scene):
+    def construct(self):
+        pass
