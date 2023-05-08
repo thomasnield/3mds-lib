@@ -245,7 +245,22 @@ class FormulaScene(Scene):
 
 class CDFScene(Scene):
     def construct(self):
+        pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
         cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
+
+        self.add(pdf_dist.axes, pdf_dist.pdf_plot, pdf_dist.x_labels)
+        self.wait()
+        self.play(
+            ReplacementTransform(pdf_dist.pdf_plot, cdf_dist.pdf_plot),
+            ReplacementTransform(pdf_dist.axes, cdf_dist.axes),
+            ReplacementTransform(pdf_dist.x_labels, cdf_dist.x_labels)
+        )
+        self.wait()
+        self.play(
+            Create(cdf_dist.cdf_plot),
+            Create(cdf_dist.pdf_to_cdf_line)
+        )
+        self.wait()
         self.add(cdf_dist, cdf_dist.pdf_plot, cdf_dist.pdf_area, cdf_dist.pdf_to_cdf_line)
         self.wait()
         self.play(cdf_dist.x_tracker.animate.set_value(cdf_dist.axes.x_range[1]), run_time=7)

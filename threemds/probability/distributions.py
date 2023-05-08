@@ -106,7 +106,8 @@ class NormalCDF(VGroup):
     def __init__(self,
                  mean=0,
                  std=1,
-                 x_range_sigma=4,
+                 x_range_sigma=3,
+                 show_x_axis_labels=NO_LABELS,
                  piece_mode=False
                  ):
         super().__init__()
@@ -114,20 +115,49 @@ class NormalCDF(VGroup):
         # PDF and CDF functions
         self.f_pdf = lambda x: scipy.stats.norm.pdf(x, mean, std)
         self.f_cdf = lambda x: scipy.stats.norm.cdf(x, mean, std)
+        self.z_score = lambda x: (x-mean) / std
 
         # axes should accomodate both PDF and CDF if needed
         self.axes = Axes(
             x_range=[mean-x_range_sigma*std, mean+x_range_sigma*std, std],
-            y_range=[0,1.1,.25]
+            y_range=[0,1.1,.25],
+            y_axis_config={"include_numbers": True,
+                           "decimal_number_config": {
+                               "num_decimal_places": 2
+                           }
+            }
         )
 
         # PDF and CDF plot
         self.pdf_plot = self.axes.plot(self.f_pdf, color=BLUE)
         self.cdf_plot = self.axes.plot(self.f_cdf, color=RED)
 
+        # X labels
+        # create both sets of labels
+        self.x_labels = VGroup(*[MathTex(round(mean+i*std,2)) \
+                                   .scale(.7) \
+                                   .next_to(self.axes.c2p(mean+i*std, 0), DOWN)
+                               for i in range(-x_range_sigma,x_range_sigma+1)
+                               ])
+
+        self.x_sigma_labels = VGroup(*[MathTex(round(self.z_score(mean+i*std)), r"\sigma") \
+                                    .scale(.7) \
+                                    .next_to(self.axes.c2p(mean+i*std, 0), DOWN)
+                               for i in range(-x_range_sigma,x_range_sigma+1)
+                               ])
+
+        if show_x_axis_labels == X_LABELS:
+            self.add(self.x_labels)
+        elif show_x_axis_labels == Z_SCORE_LABELS:
+            self.add(self.x_sigma_labels)
+
         # add components if not piece mode
         if not piece_mode:
             self.add(self.axes, self.cdf_plot)
+            if show_x_axis_labels == X_LABELS:
+                self.add(self.x_labels)
+            elif show_x_axis_labels == Z_SCORE_LABELS:
+                self.add(self.x_sigma_labels)
 
         # project PDF area to CDF
         self.x_tracker = ValueTracker(self.axes.x_range[0])
@@ -151,7 +181,7 @@ class NormalCDF(VGroup):
             line = DashedLine(
                 start=[x,pdf_y,0],
                 end=[x,cdf_y,0],
-                color=YELLOW
+                color=RED
             )
             dot = Dot(color=RED).move_to([x,cdf_y,0])
             label = MathTex(round(cdf_y_raw,2), color=RED).scale(.8).next_to(dot, UL*.5)
