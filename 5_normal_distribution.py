@@ -261,6 +261,24 @@ class CDFScene(Scene):
             Create(cdf_dist.pdf_to_cdf_line)
         )
         self.wait()
+
+        # label PDF and CDF
+        pdf_label = Text("PDF", color=BLUE).next_to(
+            cdf_dist.axes.c2p(data.mean(), cdf_dist.f_pdf(data.mean())), UR
+        )
+        cdf_label = Text("CDF", color=RED).next_to(
+            cdf_dist.axes.c2p(data.mean(), cdf_dist.f_cdf(data.mean())), UL
+        )
+
+        self.play(
+            Write(pdf_label), Write(cdf_label)
+        )
+        self.wait()
+        self.play(
+            FadeOut(pdf_label), FadeOut(cdf_label)
+        )
+
+        self.wait()
         self.add(cdf_dist, cdf_dist.pdf_plot, cdf_dist.pdf_area, cdf_dist.pdf_to_cdf_line)
         self.wait()
         self.play(cdf_dist.x_tracker.animate.set_value(cdf_dist.axes.x_range[1]), run_time=7)
