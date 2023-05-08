@@ -104,3 +104,60 @@ class NormalPDF(VGroup):
         )
 
 
+class NormalCDF(VGroup):
+    def __init__(self,
+                 mean=0,
+                 std=1,
+                 x_range_sigma=4,
+                 piece_mode=False
+                 ):
+        super().__init__()
+
+        # PDF and CDF functions
+        self.f_pdf = lambda x: scipy.stats.norm.pdf(x, mean, std)
+        self.f_cdf = lambda x: scipy.stats.norm.cdf(x, mean, std)
+
+        # axes should accomodate both PDF and CDF if needed
+        self.axes = Axes(
+            x_range=[mean-x_range_sigma*std, mean+x_range_sigma*std, std],
+            y_range=[0,1.1,.25]
+        )
+
+        # PDF and CDF plot
+        self.pdf_plot = self.axes.plot(self.f_pdf, color=YELLOW)
+        self.cdf_plot = self.axes.plot(self.f_cdf, color=RED)
+
+        # add components if not piece mode
+        if not piece_mode:
+            self.add(self.axes, self.cdf_plot)
+
+        # project PDF area to CDF
+        self.x_tracker = ValueTracker(self.axes.x_range[0])
+
+        # always redraw PDF area
+        self.pdf_area = always_redraw(lambda: self.axes.get_area(
+            self.pdf_plot,
+            (self.axes.x_range[0],
+            self.x_tracker.get_value()),
+            color=[YELLOW, RED]
+            )
+        )
+
+        # always update the connecting line
+        def create_pdf_to_cdf_line():
+            x_raw = self.x_tracker.get_value()
+            cdf_y_raw = self.f_cdf(x_raw)
+            x = self.axes.c2p(x_raw, 0)[0]
+            pdf_y = self.axes.c2p(x_raw, self.f_pdf(x_raw))[1]
+            cdf_y = self.axes.c2p(x_raw, self.f_cdf(x_raw))[1]
+            line = DashedLine(
+                start=[x,pdf_y,0],
+                end=[x,cdf_y,0],
+                color=YELLOW
+            )
+            dot = Dot(color=YELLOW).move_to([x,cdf_y,0])
+            label = MathTex(round(cdf_y_raw,2), color=YELLOW).scale(.8).next_to(dot, UL*.5)
+            return VGroup(line, dot, label)
+
+        self.pdf_to_cdf_line = always_redraw(create_pdf_to_cdf_line)
+

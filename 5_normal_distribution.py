@@ -3,7 +3,7 @@ import math
 from manim import *
 from threemds.stats.plots import DottedNumberLine, Histogram
 from threemds.stats.formulas import NormalDistributionTex
-from threemds.probability.distributions import  NormalPDF, X_LABELS, Z_SCORE_LABELS
+from threemds.probability.distributions import  NormalPDF, X_LABELS, NormalCDF
 
 data = np.array([65.27153711, 61.69996242, 60.98565375, 65.30031155, 63.51806848, 68.19351011
                     , 66.95478689, 64.55759847, 63.39196506, 67.54289154, 63.19717054, 67.49928145
@@ -245,7 +245,13 @@ class FormulaScene(Scene):
 
 class CDFScene(Scene):
     def construct(self):
-        pass
+        cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
+        self.add(cdf_dist, cdf_dist.pdf_plot, cdf_dist.pdf_area, cdf_dist.pdf_to_cdf_line)
+        self.wait()
+        self.play(cdf_dist.x_tracker.animate.set_value(cdf_dist.axes.x_range[1]), run_time=7)
+        self.wait()
+        self.play(cdf_dist.x_tracker.animate.set_value(cdf_dist.axes.x_range[0]), run_time=7)
+        self.wait()
 
 class InverseCDF(Scene):
     def construct(self):
