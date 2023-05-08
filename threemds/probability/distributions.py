@@ -13,16 +13,14 @@ class NormalPDF(VGroup):
                  mean: float = 0,
                  std: float = 0,
                  x_range_sigma = 4,
-                 area_lower_range = ValueTracker(0),
-                 area_upper_range = ValueTracker(0),
                  show_x_axis_labels = NO_LABELS,
                  show_area_plot = False
                  ):
         super().__init__()
 
         # area trackers
-        self.area_lower_range = area_lower_range
-        self.area_upper_range = area_upper_range
+        self.area_lower_range = ValueTracker(0)
+        self.area_upper_range = ValueTracker(0)
 
         # PDF function
         self.f_pdf = lambda x: scipy.stats.norm.pdf(x, mean, std)
@@ -124,7 +122,7 @@ class NormalCDF(VGroup):
         )
 
         # PDF and CDF plot
-        self.pdf_plot = self.axes.plot(self.f_pdf, color=YELLOW)
+        self.pdf_plot = self.axes.plot(self.f_pdf, color=BLUE)
         self.cdf_plot = self.axes.plot(self.f_cdf, color=RED)
 
         # add components if not piece mode
@@ -139,7 +137,7 @@ class NormalCDF(VGroup):
             self.pdf_plot,
             (self.axes.x_range[0],
             self.x_tracker.get_value()),
-            color=[YELLOW, RED]
+            color=[BLUE, RED]
             )
         )
 
@@ -155,9 +153,8 @@ class NormalCDF(VGroup):
                 end=[x,cdf_y,0],
                 color=YELLOW
             )
-            dot = Dot(color=YELLOW).move_to([x,cdf_y,0])
-            label = MathTex(round(cdf_y_raw,2), color=YELLOW).scale(.8).next_to(dot, UL*.5)
+            dot = Dot(color=RED).move_to([x,cdf_y,0])
+            label = MathTex(round(cdf_y_raw,2), color=RED).scale(.8).next_to(dot, UL*.5)
             return VGroup(line, dot, label)
 
         self.pdf_to_cdf_line = always_redraw(create_pdf_to_cdf_line)
-
