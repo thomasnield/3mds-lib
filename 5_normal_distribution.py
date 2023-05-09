@@ -1,3 +1,19 @@
+"""
+Script
+
+* Plot histogram with different sized bins, and fit curve
+* Show area of curve is not useful, but when animated to scaled down to 1.0 it creates a probability distribution.
+* Emphasize properties including symmetry and apread
+* Show probability of single point is 0, and how areas of ranges creates probabilities 
+* Show reimann sums to calcualte area briefly
+* Zoom out and show CDF being drawn by a projecting libe from PDf
+* Show subtraction operations to calculate middle ranges
+* Zoom out and show CDF tranforming a copy of its plot into an inverse CDF on another tile
+* Demonstrate inverse CDF, as well as how to generate random numbers off it
+
+
+"""
+
 import math
 
 from manim import *
