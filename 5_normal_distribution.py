@@ -9,7 +9,7 @@ Script
 * Zoom out and show CDF being drawn by a projecting libe from PDf
 * Show subtraction operations to calculate middle ranges
 * Zoom out and show CDF tranforming a copy of its plot into an inverse CDF on another tile
-* Demonstrate inverse CDF, as well as how to generate random numbers off it
+* Demonstrate inverse CDF, and trace an inverse CDF lookup back to the PDF
 
 
 """
