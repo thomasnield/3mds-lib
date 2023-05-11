@@ -1,6 +1,6 @@
 """
 Script
-
+* Plot nubmerline
 * Plot histogram with different sized bins, and fit curve
 * Show area of curve is not useful, but when animated to scaled down to 1.0 it creates a probability distribution.
 * Emphasize properties including symmetry and apread
@@ -18,8 +18,8 @@ import math
 
 from manim import *
 from threemds.stats.plots import DottedNumberLine, Histogram
-from threemds.stats.formulas import NormalDistributionTex
-from threemds.probability.distributions import  NormalPDF, X_LABELS, NormalCDF
+from threemds.stats.formulas import *
+from threemds.probability.distributions import  *
 
 data = np.array([65.27153711, 61.69996242, 60.98565375, 65.30031155, 63.51806848, 68.19351011
                     , 66.95478689, 64.55759847, 63.39196506, 67.54289154, 63.19717054, 67.49928145
@@ -103,6 +103,8 @@ class HistogramScene(Scene):
 
             hist = new_hist
             self.wait()
+            self.play(FadeOut(bin_text))
+            self.wait()
 
 class PDFScene(Scene):
     def construct(self):
@@ -120,7 +122,11 @@ class PDFScene(Scene):
                                                        round(sigma_tracker.get_value(),2)
                                                        ).to_edge(UR, buff=.5)
                                        )
-        self.play(Create(normpdf1), Write(mu_sigma_label))
+        self.play(Create(normpdf1))
+        # Write mu and sigma
+
+        normpdf1.mean_line
+
         self.wait()
         normpdf1.save_state()
         self.play(Transform(normpdf1.pdf_plot, normpdf2.pdf_plot),
@@ -259,49 +265,70 @@ class FormulaScene(Scene):
         self.play(FadeOut(euler_constant), FadeOut(pi_constant))
         self.wait()
 
+class NormalTiles(VGroup):
+    def __init__(self, show_pdf=True, show_cdf=True, show_ppf=True):
+        super().__init__()
+        self.pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
+        self.cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
+        self.ppf_dist = NormalPPF(mean=data.mean(), std=data.std())
+
+        self.left = VGroup(self.pdf_dist, self.cdf_dist) \
+            .arrange(UP) \
+            .scale_to_fit_height(7)
+
+        self.right = VGroup(self.ppf_dist) \
+            .scale_to_fit_height(7 / 2)
+
+        self.add(self.left, self.right)
+        self.arrange(RIGHT)
+
+        if not show_pdf:
+            self.left.remove(self.pdf_dist)
+        if not show_cdf:
+            self.leftremove(self.cdf_dist)
+        if not show_ppf:
+            self.right.remove(self.ppf_dist)
+
 class CDFScene(Scene):
     def construct(self):
-        pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
-        cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
-
-        self.add(pdf_dist.axes, pdf_dist.pdf_plot, pdf_dist.x_labels)
-        self.wait()
-        self.play(
-            ReplacementTransform(pdf_dist.pdf_plot, cdf_dist.pdf_plot),
-            ReplacementTransform(pdf_dist.axes, cdf_dist.axes),
-            ReplacementTransform(pdf_dist.x_labels, cdf_dist.x_labels)
-        )
-        self.wait()
-        self.play(
-            Create(cdf_dist.cdf_plot),
-            Create(cdf_dist.pdf_to_cdf_line)
-        )
-        self.wait()
-
-        # label PDF and CDF
-        pdf_label = Text("PDF", color=BLUE).next_to(
-            cdf_dist.axes.c2p(data.mean(), cdf_dist.f_pdf(data.mean())), UR
-        )
-        cdf_label = Text("CDF", color=RED).next_to(
-            cdf_dist.axes.c2p(data.mean(), cdf_dist.f_cdf(data.mean())), UL
-        )
-
-        self.play(
-            Write(pdf_label), Write(cdf_label)
-        )
-        self.wait()
-        self.play(
-            FadeOut(pdf_label), FadeOut(cdf_label)
-        )
-
-        self.wait()
-        self.add(cdf_dist, cdf_dist.pdf_plot, cdf_dist.pdf_area, cdf_dist.pdf_to_cdf_line)
-        self.wait()
-        self.play(cdf_dist.x_tracker.animate.set_value(cdf_dist.axes.x_range[1]), run_time=7)
-        self.wait()
-        self.play(cdf_dist.x_tracker.animate.set_value(cdf_dist.axes.x_range[0]), run_time=7)
-        self.wait()
-
-class InverseCDF(Scene):
-    def construct(self):
         pass
+
+class PPFScene(MovingCameraScene):
+    def construct(self):
+        normal_tiles1 = NormalTiles(show_ppf=False)
+        normal_tiles2 = NormalTiles()
+
+        self.add(normal_tiles1)
+        self.wait()
+        self.play(
+            normal_tiles1.animate.align_to(normal_tiles2.get_left(), LEFT)
+        )
+        self.wait()
+        ppf_plot_copy = normal_tiles1.cdf_dist.cdf_plot.copy()
+        self.play(
+            ppf_plot_copy.animate.move_to(normal_tiles2.ppf_dist.ppf_plot)
+        )
+        self.wait()
+        self.play(
+            ppf_plot_copy.animate.rotate(180 * DEGREES,axis=X_AXIS)
+        )
+        self.play(
+            ppf_plot_copy.animate.rotate(-90 * DEGREES)
+        )
+        self.wait()
+        self.play(
+            LaggedStart(
+                FadeIn(normal_tiles2.ppf_dist.axes),
+                FadeTransform(ppf_plot_copy,normal_tiles2.ppf_dist.ppf_plot)
+            )
+        )
+        self.wait()
+        self.play(
+            self.camera.frame.animate.move_to(normal_tiles2.ppf_dist)
+        )
+        self.play(
+            self.camera.frame.animate.set(width=normal_tiles2.ppf_dist.width * 1.2),
+            FadeOut(normal_tiles1)
+        )
+        self.wait()
+

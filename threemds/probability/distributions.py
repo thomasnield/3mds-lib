@@ -78,13 +78,17 @@ class NormalPDF(VGroup):
         if show_area_plot:
             self.add(self.area_plot)
 
-        # mean line
+        # mean and std line
         self.mean_line = always_redraw(lambda: DashedLine(start=self.axes.c2p(mean,0),
                                                      end=self.axes.c2p(mean, self.f_pdf(mean)),
                                                      color=YELLOW
                                                 )
                                        )
-
+        self.std_line = always_redraw(lambda: DashedLine(start=self.axes.c2p(mean,0),
+                                                     end=self.axes.c2p(mean, self.f_pdf(mean)),
+                                                     color=BLUE
+                                                )
+                                      )
         # area range label
         self.area_range_label = always_redraw(
             lambda: MathTex("P(", round(self.area_lower_range.get_value()), r"\leq X \leq",
@@ -188,3 +192,30 @@ class NormalCDF(VGroup):
             return VGroup(line, dot, label)
 
         self.pdf_to_cdf_line = always_redraw(create_pdf_to_cdf_line)
+
+class NormalPPF(VGroup):
+    def __init__(self,
+                 mean=0,
+                 std=1,
+                 x_range_sigma=3):
+        super().__init__()
+
+        # PDF and CDF functions
+        self.f_pdf = lambda x: scipy.stats.norm.pdf(x, mean, std)
+        self.f_cdf = lambda x: scipy.stats.norm.cdf(x, mean, std)
+        self.z_score = lambda x: (x-mean) / std
+        self.z_to_x = lambda z: z*std + mean
+
+        self.f_ppf = lambda q: self.z_to_x(scipy.stats.norm.ppf(q))
+
+        # axes should accomodate both PDF and CDF if needed
+        self.axes = Axes(
+            x_range=[.0002,.9998,.05],
+            y_range=[mean-x_range_sigma*std, mean+x_range_sigma*std, std]
+        )
+
+        # PDF and CDF plot
+        self.ppf_plot = self.axes.plot(self.f_ppf, color=ORANGE, use_smoothing=True)
+        self.add(self.axes, self.ppf_plot)
+
+

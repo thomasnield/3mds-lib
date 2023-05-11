@@ -78,13 +78,13 @@ class Histogram(VGroup):
             x_length=8,
             y_length=6
         )
-        self.normal_dist_plot = norm_axes.plot(lambda x: sp.stats.norm.pdf(x, data.mean(), data.std()),
-                                          use_smoothing=True,
-                                          color=YELLOW) \
-            .stretch_to_fit_width(chart_horiz_len) \
-            .stretch_to_fit_height(chart_vert_len) \
-            .align_to(self.barchart.get_origin(), LEFT) \
-            .align_to(self.barchart.get_origin(), DOWN)
+        self.normal_dist_plot: ParametricFunction = norm_axes.plot(lambda x: sp.stats.norm.pdf(x, data.mean(), data.std()),
+                                                          use_smoothing=True,
+                                                          color=YELLOW) \
+                                                        .stretch_to_fit_width(chart_horiz_len) \
+                                                        .stretch_to_fit_height(chart_vert_len) \
+                                                        .align_to(self.barchart.get_origin(), LEFT) \
+                                                        .align_to(self.barchart.get_origin(), DOWN)
 
         if show_normal_dist:
             self.add(self.normal_dist_plot)
