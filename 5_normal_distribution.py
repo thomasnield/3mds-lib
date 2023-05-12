@@ -1,6 +1,6 @@
 """
 Script
-* Plot nubmerline
+* Plot numberline
 * Plot histogram with different sized bins, and fit curve
 * Show area of curve is not useful, but when animated to scaled down to 1.0 it creates a probability distribution.
 * Emphasize properties including symmetry and apread
@@ -265,70 +265,47 @@ class FormulaScene(Scene):
         self.play(FadeOut(euler_constant), FadeOut(pi_constant))
         self.wait()
 
-class NormalTiles(VGroup):
-    def __init__(self, show_pdf=True, show_cdf=True, show_ppf=True):
-        super().__init__()
-        self.pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
-        self.cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
-        self.ppf_dist = NormalPPF(mean=data.mean(), std=data.std())
-
-        self.left = VGroup(self.pdf_dist, self.cdf_dist) \
-            .arrange(UP) \
-            .scale_to_fit_height(7)
-
-        self.right = VGroup(self.ppf_dist) \
-            .scale_to_fit_height(7 / 2)
-
-        self.add(self.left, self.right)
-        self.arrange(RIGHT)
-
-        if not show_pdf:
-            self.left.remove(self.pdf_dist)
-        if not show_cdf:
-            self.leftremove(self.cdf_dist)
-        if not show_ppf:
-            self.right.remove(self.ppf_dist)
-
 class CDFScene(Scene):
     def construct(self):
         pass
 
-class PPFScene(MovingCameraScene):
+class TiledScene(Scene):
     def construct(self):
-        normal_tiles1 = NormalTiles(show_ppf=False)
-        normal_tiles2 = NormalTiles()
+        pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
+        cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
 
-        self.add(normal_tiles1)
-        self.wait()
-        self.play(
-            normal_tiles1.animate.align_to(normal_tiles2.get_left(), LEFT)
-        )
-        self.wait()
-        ppf_plot_copy = normal_tiles1.cdf_dist.cdf_plot.copy()
-        self.play(
-            ppf_plot_copy.animate.move_to(normal_tiles2.ppf_dist.ppf_plot)
-        )
-        self.wait()
-        self.play(
-            ppf_plot_copy.animate.rotate(180 * DEGREES,axis=X_AXIS)
-        )
-        self.play(
-            ppf_plot_copy.animate.rotate(-90 * DEGREES)
-        )
-        self.wait()
-        self.play(
-            LaggedStart(
-                FadeIn(normal_tiles2.ppf_dist.axes),
-                FadeTransform(ppf_plot_copy,normal_tiles2.ppf_dist.ppf_plot)
-            )
-        )
-        self.wait()
-        self.play(
-            self.camera.frame.animate.move_to(normal_tiles2.ppf_dist)
-        )
-        self.play(
-            self.camera.frame.animate.set(width=normal_tiles2.ppf_dist.width * 1.2),
-            FadeOut(normal_tiles1)
-        )
-        self.wait()
+        left = VGroup(pdf_dist, cdf_dist) \
+            .arrange(UP) \
+            .scale_to_fit_height(7)
 
+        # create PPF off CDF through rotation
+        ppf_dist = cdf_dist.copy().rotate(180 * DEGREES, axis=X_AXIS) \
+            .rotate(90 * DEGREES)
+
+        ppf_dist.cdf_plot.set_color(ORANGE)
+
+        right = VGroup(ppf_dist)
+
+        # add and then remove PPF
+        self.add(VGroup(left, right).arrange(RIGHT))
+        right.remove(ppf_dist)
+
+        # transition PPF
+        self.wait()
+        cdf_copy = cdf_dist.copy()
+        cdf_copy.generate_target(ppf_dist)
+        self.play(
+            Rotate(cdf_copy, 180 * DEGREES, axis=X_AXIS)
+        )
+        self.play(
+            Rotate(cdf_copy, 90 * DEGREES)
+        )
+        self.play(
+            cdf_copy.animate.become(ppf_dist),
+        )
+
+# execute all scene renders
+from threemds.utils import render_scenes
+
+if __name__ == "__main__":
+    render_scenes(q="k")
