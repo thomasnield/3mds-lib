@@ -21,6 +21,7 @@ from manim import *
 from threemds.stats.plots import DottedNumberLine, Histogram
 from threemds.stats.formulas import *
 from threemds.probability.distributions import  *
+from threemds.utils import render_scenes
 
 data = np.array([65.27153711, 61.69996242, 60.98565375, 65.30031155, 63.51806848, 68.19351011
                     , 66.95478689, 64.55759847, 63.39196506, 67.54289154, 63.19717054, 67.49928145
@@ -121,14 +122,19 @@ class PDFScene(Scene):
         mu_tracker = ValueTracker(data.mean())
         sigma_tracker = ValueTracker(data.std())
 
+        mu_output = lambda: scipy.stats.norm.pdf(mu_tracker.get_value(),
+                                mu_tracker.get_value(),
+                                sigma_tracker.get_value()
+                             )
+
+        sigma_output = lambda: scipy.stats.norm.pdf(mu_tracker.get_value() + sigma_tracker.get_value(),
+                                mu_tracker.get_value(),
+                                sigma_tracker.get_value()
+                             )
+
         # highlight mu and sigma with lines and labels
         mu_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(mu_tracker.get_value(),0),
-                              end=normpdf.axes.c2p(mu_tracker.get_value(),
-                                                   scipy.stats.norm.pdf(mu_tracker.get_value(),
-                                                                        mu_tracker.get_value(),
-                                                                        sigma_tracker.get_value()
-                                                                        )
-                                                   ),
+                              end=normpdf.axes.c2p(mu_tracker.get_value(), mu_output()),
                               color=YELLOW
                               )
         )
@@ -140,12 +146,7 @@ class PDFScene(Scene):
         )
 
         sigma_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),0),
-                              end=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),
-                                                   scipy.stats.norm.pdf(mu_tracker.get_value() + sigma_tracker.get_value(),
-                                                                        mu_tracker.get_value(),
-                                                                        sigma_tracker.get_value()
-                                                                        )
-                                                   ),
+                              end=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),sigma_output()),
                               color=BLUE
                               )
         )
@@ -202,70 +203,50 @@ class PDFScene(Scene):
         self.play(
             mu_tracker.animate.set_value(data.mean())
         )
+        self.wait()
 
+        # animate sigma length
+        sigma_length = Line(start=normpdf.axes.c2p(mu_tracker.get_value(),0),
+                            end=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),0))
+
+        sigma_brace = Brace(sigma_length, UP)
+        self.remove(sigma_label)
+        sigma_label = sigma_label.copy()
+        self.add(sigma_label)
+        sigma_label.save_state()
+        self.play(sigma_label.animate.scale(.9).next_to(sigma_brace, UP), Write(sigma_brace))
+        self.wait()
+        self.play(FadeOut(sigma_brace), Restore(sigma_label))
+        self.wait()
 
 
 class PDFAreaScene(Scene):
     def construct(self):
-
         mean = data.mean()
         std = data.std()
+        normpdf = NormalPDF(mean=mean,std=std, show_x_axis_labels=X_LABELS)
+        self.add(normpdf)
 
-        # transition histogram to PDF
-        hist = Histogram(data,
-                  bin_count=11,
-                  show_points=True,
-                  show_normal_dist=True)
+        def get_sigma_line(sigma):
+            grp = VDict()
 
-        norm_pdf = NormalPDF(mean=mean,
-                             std=std,
-                             show_area_plot=True)
-        self.add(hist)
+            grp["line"] = DashedLine(start=normpdf.axes.c2p(mean + std*sigma, 0),
+                               end=normpdf.axes.c2p(mean+std*sigma,
+                                                    scipy.stats.norm.pdf(mean+std*sigma,mean,std)
+                                                    ),
+                               color=BLUE
+                               )
+
+            grp["label"] = MathTex(sigma, r"\sigma").scale(.6).next_to(grp["line"], UP + (LEFT if sigma < 0 else RIGHT) *.5)
+
+            return grp
+
+        sigma_lines = [get_sigma_line(i) for i in range(-3,4,1)]
+        self.play(*[Write(sl["line"]) for sl in sigma_lines])
         self.wait()
-        self.play(
-            FadeOut(hist.bars),
-            FadeOut(hist.dots),
-        )
-        self.wait()
-        self.play(
-            ReplacementTransform(hist.normal_dist_plot, norm_pdf.pdf_plot),
-            FadeTransform(hist.axes, VGroup(norm_pdf.axes, norm_pdf.x_labels)),
-        )
-        self.play(
-            Write(norm_pdf.area_range_label)
-        )
+        self.play(LaggedStart(*[Write(sl["label"]) for sl in sigma_lines]))
         self.wait()
 
-        # Start highlighting areas for 1 through 4 standard deviations
-        self.play(
-            Create(norm_pdf.area_plot)
-        )
-
-        self.wait()
-        norm_pdf.area_lower_range.set_value(mean)
-        norm_pdf.area_upper_range.set_value(mean)
-
-        for sigma in range(1,4):
-            self.play(
-                norm_pdf.area_lower_range.animate.set_value(mean - std * sigma),
-                norm_pdf.area_upper_range.animate.set_value(mean + std * sigma)
-            )
-            self.wait()
-
-
-        # switch to sigma mode
-        self.play(
-            ReplacementTransform(norm_pdf.x_labels, norm_pdf.x_sigma_labels),
-            ReplacementTransform(norm_pdf.area_range_label, norm_pdf.sigma_area_range_label)
-        )
-        self.wait()
-
-        for sigma in range(1,4):
-            self.play(
-                norm_pdf.area_lower_range.animate.set_value(mean - std * sigma),
-                norm_pdf.area_upper_range.animate.set_value(mean + std * sigma)
-            )
-            self.wait()
 
 class FormulaScene(Scene):
     def construct(self):
@@ -355,8 +336,6 @@ class TiledScene(Scene):
         )
 
 # execute all scene renders
-from threemds.utils import render_scenes
-
 if __name__ == "__main__":
-    render_scenes(q="l", play=True, scene_names=["PDFScene"])
-    #render_scenes(q="l")
+    render_scenes(q="l", play=True, scene_names=["PDFAreaScene"])
+    #render_scenes(q="k")
