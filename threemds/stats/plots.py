@@ -37,6 +37,7 @@ class Histogram(VGroup):
         self.add(self.barchart)
 
         self.bars = self.barchart[0]
+        self.bin_width = np.max(binned[0]) / bin_count
         self.axes = VGroup(self.barchart[1:])
 
         # identify plot region
