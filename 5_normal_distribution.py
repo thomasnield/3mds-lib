@@ -5,10 +5,10 @@ Script
 * Show area of curve is not useful, but when animated to scaled down to 1.0 it creates a probability distribution.
 * Emphasize properties including symmetry and apread
 * Show probability of single point is 0, and how areas of ranges creates probabilities 
-* Show reimann sums to calcualte area briefly
+* Show reimann sums to calculate area briefly
 * Zoom out and show CDF being drawn by a projecting libe from PDf
 * Show subtraction operations to calculate middle ranges
-* Zoom out and show CDF tranforming a copy of its plot into an inverse CDF on another tile
+* Zoom out and show CDF transforming a copy of its plot into an inverse CDF on another tile
 * Demonstrate inverse CDF, and trace an inverse CDF lookup back to the PDF
 
 
@@ -16,6 +16,7 @@ Script
 
 import math
 
+import scipy.stats
 from manim import *
 from threemds.stats.plots import DottedNumberLine, Histogram
 from threemds.stats.formulas import *
@@ -115,66 +116,94 @@ class PDFScene(Scene):
     def construct(self):
 
         # standard deviation initial
-        normpdf1 = NormalPDF(mean=data.mean(),std=data.std(), show_x_axis_labels=X_LABELS)
+        normpdf = NormalPDF(mean=data.mean(),std=data.std(), show_x_axis_labels=X_LABELS)
 
-        # doubled standard deviation
-        normpdf2 = NormalPDF(mean=data.mean(),std=data.std()*2, show_x_axis_labels=X_LABELS)
+        mu_tracker = ValueTracker(data.mean())
+        sigma_tracker = ValueTracker(data.std())
 
-        # tripled standard deviation
-        normpdf3 = NormalPDF(mean=data.mean(),std=data.std()*3, show_x_axis_labels=X_LABELS)
-
-        # highlight mu and sigma with lines
-        mu_trace = DashedLine(start=normpdf1.axes.c2p(data.mean(),0),
-                              end=normpdf1.axes.c2p(data.mean(), normpdf1.f_pdf(data.mean())),
+        # highlight mu and sigma with lines and labels
+        mu_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(mu_tracker.get_value(),0),
+                              end=normpdf.axes.c2p(mu_tracker.get_value(),
+                                                   scipy.stats.norm.pdf(mu_tracker.get_value(),
+                                                                        mu_tracker.get_value(),
+                                                                        sigma_tracker.get_value()
+                                                                        )
+                                                   ),
                               color=YELLOW
                               )
+        )
 
-        mu_label = MathTex(r"\mu = ", round(data.mean(), 2)) \
+        mu_label = always_redraw(lambda: MathTex(r"\mu = ", round(mu_tracker.get_value(), 2)) \
             .scale(.75) \
             .set_color(YELLOW) \
             .next_to(mu_trace, UP)
+        )
 
-        sigma_line = DashedLine(start=normpdf1.axes.c2p(data.mean() + data.std(),0),
-                              end=normpdf1.axes.c2p(data.mean() + data.std(), normpdf1.f_pdf(data.mean() + data.std())),
+        sigma_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),0),
+                              end=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),
+                                                   scipy.stats.norm.pdf(mu_tracker.get_value() + sigma_tracker.get_value(),
+                                                                        mu_tracker.get_value(),
+                                                                        sigma_tracker.get_value()
+                                                                        )
+                                                   ),
                               color=BLUE
                               )
-
-        sigma_label = MathTex(r"\sigma = ", round(data.std(), 2)) \
+        )
+        sigma_label = always_redraw(lambda: MathTex(r"\sigma = ", round(sigma_tracker.get_value(), 2)) \
             .scale(.75) \
             .set_color(BLUE) \
-            .next_to(sigma_line, UR)
+            .next_to(sigma_trace, UR)
+        )
 
-        self.play(LaggedStart(Create(normpdf1, lag_ratio=.25)))
+        # animate mu and sigma tracing
+        self.play(LaggedStart(Create(normpdf, lag_ratio=.25)))
         self.wait()
         self.play(LaggedStart(Write(mu_trace)))
         self.wait()
         self.play(Write(mu_label))
         self.wait()
-        self.play(Write(sigma_line))
+        self.play(Write(sigma_trace))
         self.wait()
         self.play(Write(sigma_label))
 
-        # Write mu and sigma
-
-        normpdf1.save_state()
-        self.play(Transform(normpdf1.pdf_plot, normpdf2.pdf_plot),
-                  Transform(normpdf1.x_labels, normpdf2.x_labels))
+        # Move mean and standard deviation around
+        moving_plot = always_redraw(lambda: normpdf.axes.plot(
+            lambda x: scipy.stats.norm.pdf(x, mu_tracker.get_value(), sigma_tracker.get_value()),
+            color=BLUE
+            )
+        )
+        self.remove(normpdf.pdf_plot)
+        self.add(moving_plot)
         self.wait()
-        self.play(Transform(normpdf1.pdf_plot, normpdf3.pdf_plot),
-                  Transform(normpdf1.x_labels, normpdf3.x_labels))
-        self.wait()
-        self.play(Restore(normpdf1))
-        self.wait()
-
-        # move mean around
         self.play(
-            Transform(normpdf1.pdf_plot,
-                      normpdf1.copy().shift(RIGHT * normpdf1.axes.c2p(data.mean() + data.std(),0)[0]).pdf_plot
-                      )
+            sigma_tracker.animate.set_value(data.std() * 1.25)
         )
         self.wait()
-        self.play(Restore(normpdf1))
+        self.play(
+            sigma_tracker.animate.set_value(data.std() * 1.5)
+        )
         self.wait()
+        self.play(
+            sigma_tracker.animate.set_value(data.std())
+        )
+        self.wait()
+        self.play(
+            mu_tracker.animate.set_value(data.mean() + 4)
+        )
+        self.wait()
+        self.play(
+            mu_tracker.animate.set_value(data.mean())
+        )
+        self.wait()
+        self.play(
+            mu_tracker.animate.set_value(data.mean() - 4)
+        )
+        self.wait()
+        self.play(
+            mu_tracker.animate.set_value(data.mean())
+        )
+
+
 
 class PDFAreaScene(Scene):
     def construct(self):
