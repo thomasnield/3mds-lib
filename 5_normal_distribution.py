@@ -43,7 +43,7 @@ create_number_line = lambda: DottedNumberLine(data)
 
 class NumberLineScene(Scene):
     def construct(self):
-        self.play(Write(create_number_line()))
+        self.play(LaggedStart(Write(create_number_line())))
         self.wait()
 
 class HistogramScene(Scene):
@@ -62,7 +62,7 @@ class HistogramScene(Scene):
         self.wait()
         self.play(ReplacementTransform(nl.dots,hist.dots))
         self.wait()
-        self.play(Create(hist), Create(bin_text))
+        self.play(Create(hist, lag_ratio=.1), Create(bin_text, lag_ratio=.1))
         self.wait()
 
         # Animate bin changes
@@ -103,52 +103,77 @@ class HistogramScene(Scene):
 
             hist = new_hist
             self.wait()
-            self.play(FadeOut(bin_text))
-            self.wait()
+
+        ## brace bar width
+        braced_bar = hist.bars[2]
+        brace = Brace(braced_bar, DOWN)
+        brace_text = brace.get_text(round(hist.bin_width,2))
+        self.play(LaggedStart(Write(brace), Write(brace_text)), FadeOut(bin_text))
+        self.wait()
 
 class PDFScene(Scene):
     def construct(self):
 
+        # standard deviation initial
         normpdf1 = NormalPDF(mean=data.mean(),std=data.std(), show_x_axis_labels=X_LABELS)
+
+        # doubled standard deviation
         normpdf2 = NormalPDF(mean=data.mean(),std=data.std()*2, show_x_axis_labels=X_LABELS)
+
+        # tripled standard deviation
         normpdf3 = NormalPDF(mean=data.mean(),std=data.std()*3, show_x_axis_labels=X_LABELS)
 
-        mu_tracker = ValueTracker(data.mean())
-        sigma_tracker = ValueTracker(data.std())
+        # highlight mu and sigma with lines
+        mu_trace = DashedLine(start=normpdf1.axes.c2p(data.mean(),0),
+                              end=normpdf1.axes.c2p(data.mean(), normpdf1.f_pdf(data.mean())),
+                              color=YELLOW
+                              )
 
-        mu_sigma_label = always_redraw(lambda: MathTex(r"\mu &= ",
-                                                       round(mu_tracker.get_value(),2),
-                                                       r"\\ \sigma &= ",
-                                                       round(sigma_tracker.get_value(),2)
-                                                       ).to_edge(UR, buff=.5)
-                                       )
-        self.play(Create(normpdf1))
+        mu_label = MathTex(r"\mu = ", round(data.mean(), 2)) \
+            .scale(.75) \
+            .set_color(YELLOW) \
+            .next_to(mu_trace, UP)
+
+        sigma_line = DashedLine(start=normpdf1.axes.c2p(data.mean() + data.std(),0),
+                              end=normpdf1.axes.c2p(data.mean() + data.std(), normpdf1.f_pdf(data.mean() + data.std())),
+                              color=BLUE
+                              )
+
+        sigma_label = MathTex(r"\sigma = ", round(data.std(), 2)) \
+            .scale(.75) \
+            .set_color(BLUE) \
+            .next_to(sigma_line, UR)
+
+        self.play(LaggedStart(Create(normpdf1, lag_ratio=.25)))
+        self.wait()
+        self.play(LaggedStart(Write(mu_trace)))
+        self.wait()
+        self.play(Write(mu_label))
+        self.wait()
+        self.play(Write(sigma_line))
+        self.wait()
+        self.play(Write(sigma_label))
+
         # Write mu and sigma
 
-        normpdf1.mean_line
-
-        self.wait()
         normpdf1.save_state()
         self.play(Transform(normpdf1.pdf_plot, normpdf2.pdf_plot),
-                  Transform(normpdf1.x_labels, normpdf2.x_labels),
-                  sigma_tracker.animate.set_value(data.std() * 2))
+                  Transform(normpdf1.x_labels, normpdf2.x_labels))
         self.wait()
         self.play(Transform(normpdf1.pdf_plot, normpdf3.pdf_plot),
-                  Transform(normpdf1.x_labels, normpdf3.x_labels),
-                  sigma_tracker.animate.set_value(data.std() * 2))
+                  Transform(normpdf1.x_labels, normpdf3.x_labels))
         self.wait()
-        self.play(Restore(normpdf1), sigma_tracker.animate.set_value(data.std()))
+        self.play(Restore(normpdf1))
         self.wait()
 
         # move mean around
         self.play(
             Transform(normpdf1.pdf_plot,
                       normpdf1.copy().shift(RIGHT * normpdf1.axes.c2p(data.mean() + data.std(),0)[0]).pdf_plot
-                      ),
-            mu_tracker.animate.set_value(data.mean() + data.std())
+                      )
         )
         self.wait()
-        self.play(Restore(normpdf1), mu_tracker.animate.set_value(data.mean()))
+        self.play(Restore(normpdf1))
         self.wait()
 
 class PDFAreaScene(Scene):
@@ -265,10 +290,6 @@ class FormulaScene(Scene):
         self.play(FadeOut(euler_constant), FadeOut(pi_constant))
         self.wait()
 
-class CDFScene(Scene):
-    def construct(self):
-        pass
-
 class TiledScene(Scene):
     def construct(self):
         pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
@@ -281,7 +302,7 @@ class TiledScene(Scene):
         # create PPF off CDF through rotation
         ppf_dist = cdf_dist.copy().rotate(180 * DEGREES, axis=X_AXIS) \
             .rotate(90 * DEGREES)
-
+        
         ppf_dist.cdf_plot.set_color(ORANGE)
 
         right = VGroup(ppf_dist)
@@ -308,4 +329,5 @@ class TiledScene(Scene):
 from threemds.utils import render_scenes
 
 if __name__ == "__main__":
-    render_scenes(q="k")
+    render_scenes(q="l", play=True, scene_names=["PDFScene"])
+    #render_scenes(q="l")
