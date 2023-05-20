@@ -2,7 +2,7 @@ from manim import *
 from threemds.utils import render_scenes
 
 
-class TextSlide(VGroup):
+class BulletSlide(VGroup):
     def __init__(self,
                  title,
                  bullet_buffer=.6,
@@ -44,7 +44,7 @@ class TextSlide(VGroup):
 # Examples
 class BulletSlideScene(Scene):
     def construct(self):
-        self.add(TextSlide(
+        self.add(BulletSlide(
                 title=Tex("My Title", color=BLUE),
                 corner_mobj=Circle(color=RED),
                 bullets = [
