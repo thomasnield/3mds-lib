@@ -40,6 +40,9 @@ class BulletSlide(VGroup):
             corner_mobj.next_to(title, DOWN).to_edge(RIGHT)
             self.add(corner_mobj)
 
+        # format
+        self.to_edge(LEFT)
+
 
 # Examples
 class BulletSlideScene(Scene):
@@ -55,7 +58,7 @@ class BulletSlideScene(Scene):
                     Tex("Here is a multiline point that","can cover multiple lines.") \
                         .arrange(DOWN, aligned_edge=LEFT)
                 ]
-            ).to_edge(LEFT)
+            )
         )
 
 # execute all scene renders
