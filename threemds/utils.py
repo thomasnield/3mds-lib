@@ -13,7 +13,7 @@ def findall(regex, str=None, file=None):
     return re.findall(regex, str, re.MULTILINE)
 
 def render_scenes(q="l", play=False, gif=False, scene_names=None):
-    regex = r"(?<=^class )[A-Za-z]+(?=\(Scene\))"
+    regex = r"(?<=^class )[A-Za-z]+(?=\([A-Za-z]*Scene\))"
     f = sys.argv[0]
     for i,scene_name in enumerate(findall(regex,file=f)):
         if scene_names is None or scene_name in scene_names:

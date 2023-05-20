@@ -17,7 +17,7 @@ Script
 import math
 
 import scipy.stats
-from manim import *
+from scipy.stats import norm
 from threemds.stats.plots import DottedNumberLine, Histogram
 from threemds.stats.formulas import *
 from threemds.probability.distributions import  *
@@ -122,12 +122,12 @@ class PDFScene(Scene):
         mu_tracker = ValueTracker(data.mean())
         sigma_tracker = ValueTracker(data.std())
 
-        mu_output = lambda: scipy.stats.norm.pdf(mu_tracker.get_value(),
+        mu_output = lambda: norm.pdf(mu_tracker.get_value(),
                                 mu_tracker.get_value(),
                                 sigma_tracker.get_value()
                              )
 
-        sigma_output = lambda: scipy.stats.norm.pdf(mu_tracker.get_value() + sigma_tracker.get_value(),
+        sigma_output = lambda: norm.pdf(mu_tracker.get_value() + sigma_tracker.get_value(),
                                 mu_tracker.get_value(),
                                 sigma_tracker.get_value()
                              )
@@ -169,7 +169,7 @@ class PDFScene(Scene):
 
         # Move mean and standard deviation around
         moving_plot = always_redraw(lambda: normpdf.axes.plot(
-            lambda x: scipy.stats.norm.pdf(x, mu_tracker.get_value(), sigma_tracker.get_value()),
+            lambda x: norm.pdf(x, mu_tracker.get_value(), sigma_tracker.get_value()),
             color=BLUE
             )
         )
@@ -232,7 +232,7 @@ class PDFAreaScene(Scene):
 
             grp["line"] = DashedLine(start=normpdf.axes.c2p(mean + std*sigma, 0),
                                end=normpdf.axes.c2p(mean+std*sigma,
-                                                    scipy.stats.norm.pdf(mean+std*sigma,mean,std)
+                                                    norm.pdf(mean+std*sigma,mean,std)
                                                     ),
                                color=BLUE
                                )
@@ -300,6 +300,70 @@ class FormulaScene(Scene):
         self.play(FadeOut(euler_constant), FadeOut(pi_constant))
         self.wait()
 
+
+import math
+
+class ConstantsExamples(ZoomedScene):
+
+  def construct(self):
+        func1 = lambda x: 1.0 / (math.sqrt(2*math.pi)) * math.exp(-.5*x**2)
+        ax1 = Axes(
+            axis_config={"include_numbers": True},
+            x_range=[-3,3,1],
+            y_range=[-.1,.6,.25]
+        )
+        plot1 = ax1.plot(func1,color=BLUE)
+
+        formula = MathTex(r"f(x) = \frac{1}{\sigma \sqrt{2\pi}}e^{\frac{1}{2}(\frac{x-\mu}{\sigma})^2}").scale(1).to_edge(UR)
+
+        # self.add(index_labels(formula[0]))
+        self.add(ax1, plot1)
+
+        alpha = ValueTracker(.1)
+        dot = always_redraw(lambda: Dot().move_to(plot1.point_from_proportion(alpha.get_value())))
+        line = always_redraw(lambda: DashedLine(start=dot.get_center(),
+                                                end=[dot.get_center()[0],ax1.c2p(0,0)[1],0]
+                                                ).set_color(YELLOW)
+                                                )
+
+        self.add(dot,line)
+
+        self.camera.frame.save_state()
+        self.camera.frame.scale(0.45).move_to(formula)
+        self.play(Write(formula))
+        self.wait()
+
+
+        # highlight constants and variable
+        self.play(Circumscribe(formula[0][11],time_width=1,color=RED),
+                  Circumscribe(formula[0][12],time_width=1,color=RED),
+                  *[f.animate.set_color(RED) for i,f in enumerate(formula[0]) if i in {11,12}]
+                  )
+        self.wait()
+        self.play(Circumscribe(formula[0][7],time_width=1,color=BLUE),
+                  Circumscribe(formula[0][19],time_width=1,color=BLUE),
+                  Circumscribe(formula[0][21],time_width=1,color=BLUE),
+                  *[f.animate.set_color(BLUE) for i,f in enumerate(formula[0]) if i in {7,19,21}]
+                  )
+        self.wait()
+        self.play(Circumscribe(formula[0][17],time_width=1,color=YELLOW),
+                  Circumscribe(formula[0][2],time_width=1,color=YELLOW),
+                *[f.animate.set_color(YELLOW) for i,f in enumerate(formula[0]) if i in {2,17}]
+                )
+
+        self.wait()
+        key = MathTex(r"\mu = 0", r"\sigma=1").arrange(DOWN).next_to(formula,DOWN).to_edge(RIGHT).scale(.8)
+        key[0][0].set_color(BLUE)
+        key[1][0].set_color(BLUE)
+
+        # zoom out
+        self.play(Restore(self.camera.frame), FadeIn(key))
+        self.play(alpha.animate.set_value(.9), run_time=5)
+        self.play(alpha.animate.set_value(.1), run_time=5)
+
+        self.wait()
+
+
 class TiledScene(Scene):
     def construct(self):
         pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
@@ -337,5 +401,5 @@ class TiledScene(Scene):
 
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="l", play=True, scene_names=["PDFAreaScene"])
+    render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
     #render_scenes(q="k")
