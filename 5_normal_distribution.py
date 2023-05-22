@@ -4,7 +4,7 @@ Script
 * Plot histogram with different sized bins, and fit curve
 * Show area of curve is not useful, but when animated to scaled down to 1.0 it creates a probability distribution.
 * Emphasize properties including symmetry and apread
-* Show probability of single point is 0, and how areas of ranges creates probabilities 
+* Show probability of single point is 0, and how areas of ranges creates probabilities
 * Show reimann sums to calculate area briefly
 * Zoom out and show CDF being drawn by a projecting libe from PDf
 * Show subtraction operations to calculate middle ranges
@@ -116,49 +116,115 @@ class HistogramScene(Scene):
 class PDFScene(Scene):
     def construct(self):
 
-        # standard deviation initial
-        normpdf = NormalPDF(mean=data.mean(),std=data.std(), show_x_axis_labels=X_LABELS)
-
+        # intialize objects and helper functions
+        normpdf = NormalPDF(mean=data.mean(),
+                            std=data.std(),
+                            show_x_axis_labels=X_LABELS,
+                            show_area_plot=False
+                            )
+        axes = normpdf.axes
+        x_labels = normpdf.x_labels
         mu_tracker = ValueTracker(data.mean())
         sigma_tracker = ValueTracker(data.std())
 
-        mu_output = lambda: norm.pdf(mu_tracker.get_value(),
-                                mu_tracker.get_value(),
-                                sigma_tracker.get_value()
-                             )
+        def get_mu(): return mu_tracker.get_value()
+        def get_sigma(): return sigma_tracker.get_value()
+        def get_pdf(x): return norm.pdf(x, get_mu(), get_sigma())
+        def get_cdf(x): return norm.cdf(x, get_mu(), get_sigma())
+        def z_to_x(z): return get_mu() + z*get_sigma()
+        def get_mu_output(): return norm.pdf(get_mu(), get_sigma(),get_sigma())
+        def get_sigma_output(): return lambda: norm.pdf(z_to_x(1), get_mu(), get_sigma())
 
-        sigma_output = lambda: norm.pdf(mu_tracker.get_value() + sigma_tracker.get_value(),
-                                mu_tracker.get_value(),
-                                sigma_tracker.get_value()
-                             )
+        # Create PDF
+        self.play(LaggedStart(Create(normpdf, lag_ratio=.25)))
+        self.wait()
+
+        # Show area under the entire curve is 1.0
+        full_area_plot = normpdf.axes.get_area(graph=normpdf.pdf_plot,
+                           x_range=(z_to_x(-4), z_to_x(4)),
+                           color=BLUE)
+
+        full_area_plot_label = MathTex("A = 1.0").move_to(full_area_plot)
+
+        self.play(Write(full_area_plot))
+        self.wait()
+        self.play(Create(full_area_plot_label))
+        self.wait()
+        self.play(FadeOut(full_area_plot_label), FadeOut(full_area_plot))
+        self.wait()
+
+        # Negate looking up a likelihood value
+        likelihood_vert_line = DashedLine(
+            start= axes.c2p(z_to_x(1.5), 0),
+            end= axes.c2p(z_to_x(1.5), get_pdf(z_to_x(1.5))),
+            color=YELLOW
+        )
+        self.play(FadeOut(x_labels))
+        self.wait()
+
+        likelihood_horz_line = DashedLine(
+            start= axes.c2p(z_to_x(1.5), get_pdf(z_to_x(1.5))),
+            end= axes.c2p(z_to_x(-4), get_pdf(z_to_x(1.5))),
+            color=YELLOW
+        )
+        x_value_lookup_label = MathTex(round(z_to_x(1.5),2), color=YELLOW) \
+            .next_to(likelihood_vert_line, DOWN) \
+            .scale(.75)
+
+        self.play(Write(x_value_lookup_label), Write(likelihood_vert_line))
+        self.wait()
+
+        likelihood_lookup_label = MathTex(r"\times", color=RED) \
+            .next_to(likelihood_horz_line, LEFT)
+
+        self.play(Write(likelihood_horz_line))
+        self.play(Write(likelihood_lookup_label))
+
+        self.wait()
+        self.play(
+            likelihood_vert_line.animate.set_color(RED),
+            likelihood_horz_line.animate.set_color(RED),
+        )
+        self.play(
+            FadeOut(likelihood_vert_line),
+            FadeOut(likelihood_horz_line),
+            FadeOut(likelihood_lookup_label),
+            FadeOut(x_value_lookup_label)
+        )
+        return
+
+        # Show a narrow range
+        self.play(
+            normpdf.area_lower_range.animate.set_value(z_to_x(2)),
+            normpdf.area_upper_range.animate.set_value(z_to_x(3))
+        )
+        self.wait()
+
 
         # highlight mu and sigma with lines and labels
-        mu_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(mu_tracker.get_value(),0),
-                              end=normpdf.axes.c2p(mu_tracker.get_value(), mu_output()),
+        mu_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(get_mu(),0),
+                              end=normpdf.axes.c2p(get_mu(), get_mu_output()),
                               color=YELLOW
                               )
         )
 
-        mu_label = always_redraw(lambda: MathTex(r"\mu = ", round(mu_tracker.get_value(), 2)) \
+        mu_label = always_redraw(lambda: MathTex(r"\mu = ", round(get_mu(), 2), color=YELLOW) \
             .scale(.75) \
-            .set_color(YELLOW) \
             .next_to(mu_trace, UP)
         )
 
-        sigma_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),0),
-                              end=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),sigma_output()),
+        sigma_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(get_mu() + get_sigma(), 0),
+                              end=normpdf.axes.c2p(get_mu() + get_sigma(), get_sigma_output()),
                               color=BLUE
                               )
         )
-        sigma_label = always_redraw(lambda: MathTex(r"\sigma = ", round(sigma_tracker.get_value(), 2)) \
+        sigma_label = always_redraw(lambda: MathTex(r"\sigma = ", round(sigma_tracker.get_value(), 2), color=BLUE) \
             .scale(.75) \
-            .set_color(BLUE) \
             .next_to(sigma_trace, UR)
         )
 
+
         # animate mu and sigma tracing
-        self.play(LaggedStart(Create(normpdf, lag_ratio=.25)))
-        self.wait()
         self.play(LaggedStart(Write(mu_trace)))
         self.wait()
         self.play(Write(mu_label))
@@ -376,7 +442,7 @@ class TiledScene(Scene):
         # create PPF off CDF through rotation
         ppf_dist = cdf_dist.copy().rotate(180 * DEGREES, axis=X_AXIS) \
             .rotate(90 * DEGREES)
-        
+
         ppf_dist.cdf_plot.set_color(ORANGE)
 
         right = VGroup(ppf_dist)
@@ -401,5 +467,5 @@ class TiledScene(Scene):
 
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
+    render_scenes(q="l", play=True, scene_names=["PDFScene"])
     #render_scenes(q="k")
