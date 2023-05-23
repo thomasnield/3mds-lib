@@ -113,6 +113,56 @@ class HistogramScene(Scene):
         self.play(LaggedStart(Write(brace), Write(brace_text)), FadeOut(bin_text))
         self.wait()
 
+class ConstantsExamples(ZoomedScene):
+
+  def construct(self):
+        normpdf = NormalPDF(mean=data.mean(),
+                          std=data.std(),
+                          show_x_axis_labels=X_LABELS,
+                          show_area_plot=False
+                          )
+
+        formula = NormalDistributionTex().scale(1).to_edge(UR)
+
+        self.add(normpdf)
+
+        self.camera.frame.save_state()
+        self.camera.frame.scale(0.45).move_to(formula)
+        self.play(Write(formula))
+        self.wait()
+
+
+        # highlight mu and sigma
+        self.play(formula.mu.animate.set_color(YELLOW),
+                  Circumscribe(formula.mu, color=YELLOW)
+        )
+        self.wait()
+        self.play(formula.sigmas.animate.set_color(BLUE),
+                  *[Circumscribe(s, color=BLUE) for s in formula.sigmas]
+                  )
+        self.wait()
+
+        # highlight e and pi
+        pi_equals = MathTex(r"\pi = 3.14159...", color=RED).next_to(formula, DOWN)
+        e_equals = MathTex(r"e = 2.71828...", color=RED).next_to(formula, DOWN)
+        self.play(
+            Circumscribe(formula.pi),
+            FadeIn(pi_equals)
+        )
+        self.wait()
+        self.play(FadeOut(pi_equals))
+        self.wait()
+        self.play(
+            Circumscribe(formula.eulers_number, color=RED),
+            FadeIn(e_equals)
+        )
+        self.play(FadeOut(e_equals, color=RED))
+        self.wait()
+        # zoom out
+        self.play(Restore(self.camera.frame))
+        self.wait()
+
+
 class PDFScene(Scene):
     def construct(self):
 
@@ -131,98 +181,57 @@ class PDFScene(Scene):
         def get_sigma(): return sigma_tracker.get_value()
         def get_pdf(x): return norm.pdf(x, get_mu(), get_sigma())
         def get_cdf(x): return norm.cdf(x, get_mu(), get_sigma())
+        def get_ppf(p): return norm.ppf(p, get_mu(), get_sigma())
         def z_to_x(z): return get_mu() + z*get_sigma()
         def get_mu_output(): return norm.pdf(get_mu(), get_sigma(),get_sigma())
-        def get_sigma_output(): return lambda: norm.pdf(z_to_x(1), get_mu(), get_sigma())
+        def get_sigma_output(): return norm.pdf(z_to_x(1), get_mu(), get_sigma())
+
+        def get_area_x(a,b,color=YELLOW): return \
+            normpdf.axes.get_area(graph=normpdf.pdf_plot,
+                                  x_range=(a, b),
+                                  color=color)
+
+        def get_area_z(a_sigma,b_sigma,color=YELLOW): return get_area_x(z_to_x(a_sigma), z_to_x(b_sigma), color)
+
+        def get_vert_line_x(x: float, color=YELLOW): return DashedLine(
+            start= axes.c2p(x, 0),
+            end= axes.c2p(x, get_pdf(x)),
+            color=color
+        )
+
+        def get_vert_line_z(z: float, color=YELLOW): return get_vert_line_x(z_to_x(z), color)
+
+        def get_horz_line_x(x: float, color=YELLOW): return DashedLine(
+            start= axes.c2p(x, get_pdf(x)),
+            end= axes.c2p(z_to_x(-4), get_pdf(x)),
+            color=color
+        )
+
+        def get_horz_line_z(z: float, color=YELLOW): return get_horz_line_x(z_to_x(z), color)
 
         # Create PDF
-        self.play(LaggedStart(Create(normpdf, lag_ratio=.25)))
+        self.add(normpdf)
+
+        # show PDF label
+        pdf_label = Text("Probability Density Function (PDF)").to_edge(UP)
+        self.play(FadeIn(pdf_label))
         self.wait()
-
-        # Show area under the entire curve is 1.0
-        full_area_plot = normpdf.axes.get_area(graph=normpdf.pdf_plot,
-                           x_range=(z_to_x(-4), z_to_x(4)),
-                           color=BLUE)
-
-        full_area_plot_label = MathTex("A = 1.0").move_to(full_area_plot)
-
-        self.play(Write(full_area_plot))
+        self.play(FadeOut(pdf_label))
         self.wait()
-        self.play(Create(full_area_plot_label))
-        self.wait()
-        self.play(FadeOut(full_area_plot_label), FadeOut(full_area_plot))
-        self.wait()
-
-        # Negate looking up a likelihood value
-        likelihood_vert_line = DashedLine(
-            start= axes.c2p(z_to_x(1.5), 0),
-            end= axes.c2p(z_to_x(1.5), get_pdf(z_to_x(1.5))),
-            color=YELLOW
-        )
-        self.play(FadeOut(x_labels))
-        self.wait()
-
-        likelihood_horz_line = DashedLine(
-            start= axes.c2p(z_to_x(1.5), get_pdf(z_to_x(1.5))),
-            end= axes.c2p(z_to_x(-4), get_pdf(z_to_x(1.5))),
-            color=YELLOW
-        )
-        x_value_lookup_label = MathTex(round(z_to_x(1.5),2), color=YELLOW) \
-            .next_to(likelihood_vert_line, DOWN) \
-            .scale(.75)
-
-        self.play(Write(x_value_lookup_label), Write(likelihood_vert_line))
-        self.wait()
-
-        likelihood_lookup_label = MathTex(r"\times", color=RED) \
-            .next_to(likelihood_horz_line, LEFT)
-
-        self.play(Write(likelihood_horz_line))
-        self.play(Write(likelihood_lookup_label))
-
-        self.wait()
-        self.play(
-            likelihood_vert_line.animate.set_color(RED),
-            likelihood_horz_line.animate.set_color(RED),
-        )
-        self.play(
-            FadeOut(likelihood_vert_line),
-            FadeOut(likelihood_horz_line),
-            FadeOut(likelihood_lookup_label),
-            FadeOut(x_value_lookup_label)
-        )
-        return
-
-        # Show a narrow range
-        self.play(
-            normpdf.area_lower_range.animate.set_value(z_to_x(2)),
-            normpdf.area_upper_range.animate.set_value(z_to_x(3))
-        )
-        self.wait()
-
 
         # highlight mu and sigma with lines and labels
-        mu_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(get_mu(),0),
-                              end=normpdf.axes.c2p(get_mu(), get_mu_output()),
-                              color=YELLOW
-                              )
-        )
+        mu_trace = always_redraw(lambda: get_vert_line_z(0))
 
         mu_label = always_redraw(lambda: MathTex(r"\mu = ", round(get_mu(), 2), color=YELLOW) \
-            .scale(.75) \
-            .next_to(mu_trace, UP)
-        )
+                                 .scale(.75) \
+                                 .next_to(mu_trace, UP)
+                                 )
 
-        sigma_trace = always_redraw(lambda: DashedLine(start=normpdf.axes.c2p(get_mu() + get_sigma(), 0),
-                              end=normpdf.axes.c2p(get_mu() + get_sigma(), get_sigma_output()),
-                              color=BLUE
-                              )
-        )
+        sigma_trace = always_redraw(lambda: get_vert_line_z(1, color=BLUE))
         sigma_label = always_redraw(lambda: MathTex(r"\sigma = ", round(sigma_tracker.get_value(), 2), color=BLUE) \
-            .scale(.75) \
-            .next_to(sigma_trace, UR)
-        )
-
+                                    .scale(.75) \
+                                    .next_to(sigma_trace, UR)
+                                    )
 
         # animate mu and sigma tracing
         self.play(LaggedStart(Write(mu_trace)))
@@ -237,8 +246,8 @@ class PDFScene(Scene):
         moving_plot = always_redraw(lambda: normpdf.axes.plot(
             lambda x: norm.pdf(x, mu_tracker.get_value(), sigma_tracker.get_value()),
             color=BLUE
-            )
         )
+                                    )
         self.remove(normpdf.pdf_plot)
         self.add(moving_plot)
         self.wait()
@@ -272,8 +281,8 @@ class PDFScene(Scene):
         self.wait()
 
         # animate sigma length
-        sigma_length = Line(start=normpdf.axes.c2p(mu_tracker.get_value(),0),
-                            end=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(),0))
+        sigma_length = Line(start=normpdf.axes.c2p(mu_tracker.get_value(), 0),
+                            end=normpdf.axes.c2p(mu_tracker.get_value() + sigma_tracker.get_value(), 0))
 
         sigma_brace = Brace(sigma_length, UP)
         self.remove(sigma_label)
@@ -284,149 +293,107 @@ class PDFScene(Scene):
         self.wait()
         self.play(FadeOut(sigma_brace), Restore(sigma_label))
         self.wait()
-
-
-class PDFAreaScene(Scene):
-    def construct(self):
-        mean = data.mean()
-        std = data.std()
-        normpdf = NormalPDF(mean=mean,std=std, show_x_axis_labels=X_LABELS)
-        self.add(normpdf)
-
-        def get_sigma_line(sigma):
-            grp = VDict()
-
-            grp["line"] = DashedLine(start=normpdf.axes.c2p(mean + std*sigma, 0),
-                               end=normpdf.axes.c2p(mean+std*sigma,
-                                                    norm.pdf(mean+std*sigma,mean,std)
-                                                    ),
-                               color=BLUE
-                               )
-
-            grp["label"] = MathTex(sigma, r"\sigma").scale(.6).next_to(grp["line"], UP + (LEFT if sigma < 0 else RIGHT) *.5)
-
-            return grp
-
-        sigma_lines = [get_sigma_line(i) for i in range(-3,4,1)]
-        self.play(*[Write(sl["line"]) for sl in sigma_lines])
-        self.wait()
-        self.play(LaggedStart(*[Write(sl["label"]) for sl in sigma_lines]))
+        self.add(normpdf.pdf_plot)
+        self.remove(moving_plot)
+        self.play(*[FadeOut(mobj) for mobj in [mu_trace, mu_label, sigma_trace, sigma_label]])
         self.wait()
 
+        # Show area under the entire curve is 1.0
+        full_area_plot = get_area_z(-4,4,color=YELLOW)
+        full_area_plot_label = MathTex("A = 1.0").move_to(full_area_plot)
 
-class FormulaScene(Scene):
-    def construct(self):
-        f = NormalDistributionTex()
-
-        # write formula
-        self.play(Write(f))
+        self.play(Write(full_area_plot))
+        self.wait()
+        self.play(Create(full_area_plot_label))
+        self.wait()
+        self.play(FadeOut(full_area_plot_label), FadeOut(full_area_plot))
         self.wait()
 
-        # highlight mu
-        self.play(
-            f.mu.animate.set_color(RED),
-            Circumscribe(f.mu)
-        )
+        # Negate looking up a likelihood value
+        likelihood_vert_line = get_vert_line_z(1.5)
+        self.play(FadeOut(x_labels))
         self.wait()
 
-        # highlight sigma
-        self.play(
-            f.sigmas.animate.set_color(BLUE),
-            *[Circumscribe(s) for s in f.sigmas]
-        )
+        likelihood_horz_line = get_horz_line_z(1.5)
 
+        x_value_lookup_label = MathTex(round(z_to_x(1.5),2), color=YELLOW) \
+            .next_to(likelihood_vert_line, DOWN) \
+            .scale(.75)
+
+        self.play(Write(x_value_lookup_label), Write(likelihood_vert_line))
         self.wait()
 
-        # highlight Euler's number and Pi
-        euler_constant = VGroup(MathTex("e = "), DecimalNumber(math.e.real, num_decimal_places=4, show_ellipsis=True)) \
-            .arrange(RIGHT) \
-            .to_edge(DOWN)
+        likelihood_lookup_label = MathTex(r"\times", color=RED) \
+            .next_to(likelihood_horz_line, LEFT)
 
-        pi_constant = VGroup(MathTex(r"\pi = "), DecimalNumber(math.pi.real, num_decimal_places=4, show_ellipsis=True)) \
-            .arrange(RIGHT) \
-            .next_to(euler_constant, UP)
+        self.play(Write(likelihood_horz_line))
+        self.play(Write(likelihood_lookup_label))
 
-        for v in euler_constant:
-            v.set_color(YELLOW)
-        for v in pi_constant:
-            v.set_color(YELLOW)
-
-        self.play(
-            f.eulers_number.animate.set_color(YELLOW),
-            Circumscribe(f.eulers_number),
-            FadeIn(euler_constant)
-        )
         self.wait()
         self.play(
-            f.pi.animate.set_color(YELLOW),
-            Circumscribe(f.pi),
-            FadeIn(pi_constant)
+            likelihood_horz_line.animate.set_color(RED),
+            x_value_lookup_label.animate.set_color(RED)
         )
-        self.wait(1)
-        self.play(FadeOut(euler_constant), FadeOut(pi_constant))
-        self.wait()
-
-
-import math
-
-class ConstantsExamples(ZoomedScene):
-
-  def construct(self):
-        func1 = lambda x: 1.0 / (math.sqrt(2*math.pi)) * math.exp(-.5*x**2)
-        ax1 = Axes(
-            axis_config={"include_numbers": True},
-            x_range=[-3,3,1],
-            y_range=[-.1,.6,.25]
+        self.play(
+            FadeOut(likelihood_horz_line),
+            FadeOut(likelihood_lookup_label),
+            FadeOut(x_value_lookup_label)
         )
-        plot1 = ax1.plot(func1,color=BLUE)
-
-        formula = MathTex(r"f(x) = \frac{1}{\sigma \sqrt{2\pi}}e^{\frac{1}{2}(\frac{x-\mu}{\sigma})^2}").scale(1).to_edge(UR)
-
-        # self.add(index_labels(formula[0]))
-        self.add(ax1, plot1)
-
-        alpha = ValueTracker(.1)
-        dot = always_redraw(lambda: Dot().move_to(plot1.point_from_proportion(alpha.get_value())))
-        line = always_redraw(lambda: DashedLine(start=dot.get_center(),
-                                                end=[dot.get_center()[0],ax1.c2p(0,0)[1],0]
-                                                ).set_color(YELLOW)
-                                                )
-
-        self.add(dot,line)
-
-        self.camera.frame.save_state()
-        self.camera.frame.scale(0.45).move_to(formula)
-        self.play(Write(formula))
         self.wait()
 
-
-        # highlight constants and variable
-        self.play(Circumscribe(formula[0][11],time_width=1,color=RED),
-                  Circumscribe(formula[0][12],time_width=1,color=RED),
-                  *[f.animate.set_color(RED) for i,f in enumerate(formula[0]) if i in {11,12}]
-                  )
+        # Show a narrow area range
+        narrow_area = get_area_x(69,70,color=YELLOW)
+        self.play(ReplacementTransform(likelihood_vert_line, narrow_area))
         self.wait()
-        self.play(Circumscribe(formula[0][7],time_width=1,color=BLUE),
-                  Circumscribe(formula[0][19],time_width=1,color=BLUE),
-                  Circumscribe(formula[0][21],time_width=1,color=BLUE),
-                  *[f.animate.set_color(BLUE) for i,f in enumerate(formula[0]) if i in {7,19,21}]
-                  )
+
+        # add range labels for range 69-70
+        a_label = MathTex(69, color=YELLOW).scale(.75).next_to(axes.c2p(69,0), DOWN)
+        b_label = MathTex(70, color=YELLOW).scale(.75).next_to(axes.c2p(70,0), DOWN)
+
+        self.play(Write(a_label), Write(b_label))
         self.wait()
-        self.play(Circumscribe(formula[0][17],time_width=1,color=YELLOW),
-                  Circumscribe(formula[0][2],time_width=1,color=YELLOW),
-                *[f.animate.set_color(YELLOW) for i,f in enumerate(formula[0]) if i in {2,17}]
-                )
 
+        # show area label for range 69-70
+        callout_line = Line(start=narrow_area.get_center(),
+                            end=narrow_area.get_center() + UP + RIGHT,
+                            color=YELLOW)
+
+        area_label_a_b = MathTex("A = ", round(get_cdf(70) - get_cdf(69), 2), color=YELLOW) \
+            .next_to(callout_line.end, RIGHT)
+
+        self.play(Write(callout_line))
+        self.play(Write(area_label_a_b))
+
+        # widen range to 68-71
+        self.play(
+            Transform(narrow_area, get_area_x(68,71,color=YELLOW)),
+
+            Transform(area_label_a_b, MathTex("A = ", round(get_cdf(71) - get_cdf(68), 2), color=YELLOW) \
+                      .next_to(callout_line.end, RIGHT)),
+
+            Transform(a_label, MathTex(68, color=YELLOW).scale(.75).next_to(axes.c2p(68,0), DOWN)),
+
+            Transform(b_label, MathTex(71, color=YELLOW).scale(.75).next_to(axes.c2p(71,0), DOWN))
+        )
         self.wait()
-        key = MathTex(r"\mu = 0", r"\sigma=1").arrange(DOWN).next_to(formula,DOWN).to_edge(RIGHT).scale(.8)
-        key[0][0].set_color(BLUE)
-        key[1][0].set_color(BLUE)
 
-        # zoom out
-        self.play(Restore(self.camera.frame), FadeIn(key))
-        self.play(alpha.animate.set_value(.9), run_time=5)
-        self.play(alpha.animate.set_value(.1), run_time=5)
+        # widen range to 64-77
+        self.play(
+            Transform(narrow_area, get_area_x(64,77,color=YELLOW)),
 
+            Transform(area_label_a_b, MathTex("A = ", round(get_cdf(77) - get_cdf(64), 2), color=YELLOW) \
+                .next_to(callout_line.end, RIGHT)),
+
+            Transform(a_label, MathTex(64, color=YELLOW)\
+                      .scale(.75)\
+                      .next_to(axes.c2p(64,0), DOWN)),
+
+            Transform(b_label, MathTex(77, color=YELLOW)\
+                      .scale(.75)\
+                      .next_to(axes.c2p(77,0), DOWN))
+        )
+        self.wait()
+        self.play(*[FadeOut(mobj) for mobj in [narrow_area, area_label_a_b, a_label, b_label, callout_line]])
         self.wait()
 
 
@@ -434,6 +401,8 @@ class TiledScene(Scene):
     def construct(self):
         pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
         cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
+
+        pdf_dist_start = pdf_dist.copy()
 
         left = VGroup(pdf_dist, cdf_dist) \
             .arrange(UP) \
@@ -446,10 +415,21 @@ class TiledScene(Scene):
         ppf_dist.cdf_plot.set_color(ORANGE)
 
         right = VGroup(ppf_dist)
+        tiles = VGroup(left, right).arrange(RIGHT)
 
+        # initialize PDF
+        self.add(pdf_dist_start)
+        self.wait()
+        self.play(
+            ReplacementTransform(pdf_dist_start, pdf_dist)
+        )
+        self.wait()
+        self.play(
+            FadeIn(tiles)
+        )
         # add and then remove PPF
-        self.add(VGroup(left, right).arrange(RIGHT))
         right.remove(ppf_dist)
+
 
         # transition PPF
         self.wait()
@@ -467,5 +447,5 @@ class TiledScene(Scene):
 
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="l", play=True, scene_names=["PDFScene"])
+    render_scenes(q="l", play=True, scene_names=["TiledScene"])
     #render_scenes(q="k")
