@@ -8,7 +8,7 @@ from pathlib import Path
 import cairo
 import numpy as np
 from lxml.html.builder import UL
-from manim import VGroup, VMobject, tempconfig, config, ORIGIN
+from manim import VGroup, VMobject, tempconfig, config, ORIGIN, Scene
 from manim.utils.family import extract_mobject_family_members
 
 CAIRO_LINE_WIDTH_MULTIPLE: float = 0.01
