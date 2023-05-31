@@ -1,7 +1,6 @@
 from manim import *
 from threemds.utils import render_scenes
 
-
 class BulletSlide(VGroup):
     def __init__(self,
                  title,

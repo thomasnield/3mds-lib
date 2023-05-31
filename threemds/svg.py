@@ -7,7 +7,8 @@ from pathlib import Path
 
 import cairo
 import numpy as np
-from manim import VGroup, VMobject, tempconfig, config
+from lxml.html.builder import UL
+from manim import VGroup, VMobject, tempconfig, config, ORIGIN
 from manim.utils.family import extract_mobject_family_members
 
 CAIRO_LINE_WIDTH_MULTIPLE: float = 0.01
@@ -185,7 +186,8 @@ def trimmed_frame_context(mobj, op):
     m_width = mobj.width + padding
     m_height = mobj.height + padding
     p_width = int(m_width * config.pixel_width / config.frame_width)
-
+    mobj.save_state()
+    mobj.move_to(ORIGIN)
     with tempconfig({
         "frame_width": m_width,
         "frame_height": m_height,
@@ -193,3 +195,5 @@ def trimmed_frame_context(mobj, op):
         "pixel_height": int(p_width * m_height / m_width)
     }):
         op()
+
+    mobj.restore()
