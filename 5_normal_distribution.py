@@ -147,21 +147,26 @@ class ConstantsExamples(ZoomedScene):
         e_equals = MathTex(r"e = 2.71828...", color=RED).next_to(formula, DOWN)
         self.play(
             Circumscribe(formula.pi),
-            FadeIn(pi_equals)
+            FadeIn(pi_equals),
+            formula.pi.animate.set_color((RED))
         )
         self.wait()
         self.play(FadeOut(pi_equals))
         self.wait()
         self.play(
             Circumscribe(formula.eulers_number, color=RED),
-            FadeIn(e_equals)
+            FadeIn(e_equals),
+            formula.eulers_number.animate.set_color(RED)
         )
         self.play(FadeOut(e_equals, color=RED))
         self.wait()
-        # zoom out
-        self.play(Restore(self.camera.frame))
-        self.wait()
 
+        # zoom out, restore colored elements to WHITE
+        self.play(
+            Restore(self.camera.frame),
+            *[e.animate.set_color((WHITE)) for e in [formula.mu, formula.eulers_number, formula.sigmas, formula.pi]]
+        )
+        self.wait()
 
 class PDFScene(Scene):
     def construct(self):
@@ -396,7 +401,6 @@ class PDFScene(Scene):
         self.play(*[FadeOut(mobj) for mobj in [narrow_area, area_label_a_b, a_label, b_label, callout_line]])
         self.wait()
 
-
 class TiledScene(Scene):
     def construct(self):
         pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
@@ -445,7 +449,13 @@ class TiledScene(Scene):
             cdf_copy.animate.become(ppf_dist),
         )
 
+
+
+from manim import config
+
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="l", play=True, scene_names=["TiledScene"])
-    #render_scenes(q="k")
+    # render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
+    # render_scenes(q="k")
+    mobj = NormalDistributionTex(fill_color=BLACK)
+    mobj.to_svg()
