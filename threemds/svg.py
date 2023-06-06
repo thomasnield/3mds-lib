@@ -150,14 +150,10 @@ def create_svg_from_vmobject(vmobject: VMobject, file_name: str | Path = None, t
         file_name = tempfile.mktemp(dir="media", suffix=".svg")
     file_name = Path(file_name).absolute()
 
-    def op(vmobject=vmobject):
-        with _get_cairo_context(file_name) as ctx:
-            for _vmobject in extract_mobject_family_members([vmobject], True, True):
-                _create_svg_from_vmobject_internal(_vmobject, ctx)
-    if trim:
-        trimmed_frame_context(vmobject, op)
-    else:
-        op()
+    with _get_cairo_context(file_name) as ctx:
+        for _vmobject in extract_mobject_family_members([vmobject], True, True):
+            _create_svg_from_vmobject_internal(_vmobject, ctx)
+
     return file_name
 
 
@@ -166,34 +162,11 @@ def create_svg_from_vgroup(vgroup: VGroup, file_name: str | Path = None, trim=Tr
         file_name = tempfile.mktemp(dir="media", suffix=".svg")
     file_name = Path(file_name).absolute()
 
-    def op(vgroup=vgroup):
-        with _get_cairo_context(file_name) as ctx:
-            # a vgroup is a list of VMobjects which may contain other VGroups
-            # flatten the vgroup to get a list of VMobjects
-            vgroup = extract_mobject_family_members(vgroup, True, True)
-            for vmobject in vgroup:
-                _create_svg_from_vmobject_internal(vmobject, ctx)
-    if trim:
-        trimmed_frame_context(vgroup, op)
-    else:
-        op()
+    with _get_cairo_context(file_name) as ctx:
+        # a vgroup is a list of VMobjects which may contain other VGroups
+        # flatten the vgroup to get a list of VMobjects
+        vgroup = extract_mobject_family_members(vgroup, True, True)
+        for vmobject in vgroup:
+            _create_svg_from_vmobject_internal(vmobject, ctx)
 
     return file_name
-
-
-def trimmed_frame_context(mobj, op):
-    padding = 0
-    m_width = mobj.width + padding
-    m_height = mobj.height + padding
-    p_width = int(m_width * config.pixel_width / config.frame_width)
-    mobj.save_state()
-    mobj.move_to(ORIGIN)
-    with tempconfig({
-        "frame_width": m_width,
-        "frame_height": m_height,
-        "pixel_width": p_width,
-        "pixel_height": int(p_width * m_height / m_width)
-    }):
-        op()
-
-    mobj.restore()
