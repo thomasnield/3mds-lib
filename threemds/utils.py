@@ -4,7 +4,7 @@ from manim import config, tempconfig, VGroup
 
 from threemds import create_svg_from_vgroup, create_svg_from_vmobject
 
-scene_regex = r"(?<=^class )[A-Za-z]+(?=\([A-Za-z]*Scene\))"
+scene_regex = r"(?<=^class )[A-Za-z0-9]+(?=\([A-Za-z]*Scene.*\))"
 
 def mobj_to_png(mob, filename: str):
     padding = 0
@@ -48,13 +48,13 @@ def findall(regex, str=None, file=None):
 
     return re.findall(regex, str, re.MULTILINE)
 
-def render_scenes(q="l", play=False, gif=False, scene_names=None):
+def render_scenes(q="l", play=False, gif=False, last_scene=False, frames_only=False, scene_names=None):
     f = sys.argv[0]
     for i,scene_name in enumerate(findall(scene_regex,file=f)):
         print(scene_name)
         if scene_names is None or scene_name in scene_names:
            print(f"Rendering: {scene_name}")
-           os.system(f"manim -q{q} -v WARNING --disable_caching {'-p' if play else ''} {'--format=gif' if gif else ''} -o {i+1:02d}_{scene_name} {sys.argv[0]} {scene_name}")
+           os.system(f"manim -q{q} -v WARNING --disable_caching {'-p' if play else ''} {'-g' if frames_only else ''} {'-s' if last_scene else ''} {'--format=gif' if gif else ''} -o {i+1:02d}_{scene_name} {sys.argv[0]} {scene_name}")
 
 def render_slides():
     regex = r"(?<=^class )[A-Za-z]+(?=\(Slide\))"
