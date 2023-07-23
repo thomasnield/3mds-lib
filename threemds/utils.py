@@ -6,11 +6,11 @@ from threemds import create_svg_from_vgroup, create_svg_from_vmobject
 
 scene_regex = r"(?<=^class )[A-Za-z0-9]+(?=\([A-Za-z]*Scene.*\))"
 
-def mobj_to_png(mob, filename: str):
-    padding = 0
-    m_width = mob.width + padding
-    m_height = mob.height + padding
+def mobj_to_png(mob, filename: str, padding=0, w_padding=0, h_padding=0):
+    m_width = mob.width + w_padding if padding == 0 else padding
+    m_height = mob.height + h_padding if padding == 0 else padding
     p_width = int(m_width * config.pixel_width / config.frame_width)
+
     with tempconfig({
         "frame_width": m_width,
         "frame_height": m_height,
@@ -21,9 +21,9 @@ def mobj_to_png(mob, filename: str):
         img.save(filename)
         print(r"![img](data:image/png;base64," + base64.b64encode(open(filename,"rb").read()).decode('ascii') + ")")
 
-def mobj_to_svg(mob, filename: str,  trim=True, padding=0):
-    m_width = mob.width + padding
-    m_height = mob.height + padding
+def mobj_to_svg(mob, filename: str,  trim=True, padding=0, w_padding=0, h_padding=0):
+    m_width = mob.width + w_padding if padding == 0 else padding
+    m_height = mob.height + h_padding if padding == 0 else padding
     p_width = int(m_width * config.pixel_width / config.frame_width)
     with tempconfig({
         "frame_width": m_width,
