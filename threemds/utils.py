@@ -1,7 +1,7 @@
 import base64
 import re, os, sys
 
-from manim import config, tempconfig, VGroup
+from manim import config, tempconfig, VGroup, Scene, Group
 from threemds import create_svg_from_vgroup, create_svg_from_vmobject
 
 scene_regex = r"(?<=^class )[A-Za-z0-9]+(?=\([A-Za-z]*Scene.*\))"
@@ -50,7 +50,15 @@ def findall(regex, str=None, file=None):
 
     return re.findall(regex, str, re.MULTILINE)
 
-def render_scenes(q="l",
+def scene_fit_configs(scene: Scene, padding=0, w_padding=0, h_padding=0):
+    mob = Group(*scene.mobjects)
+    m_width = mob.width + w_padding if padding == 0 else padding
+    m_height = mob.height + h_padding if padding == 0 else padding
+    p_width = int(m_width * config.pixel_width / config.frame_width)
+    p_height= int(m_height * config.pixel_height / config.frame_height)
+    print(f"frame_width: {m_width}, frame_height: {m_height}, pixel_width: {p_width}, pixel_height: {p_height}")
+
+def render_scenes(q=None,
                   play=False,
                   gif=False,
                   last_scene=False,
@@ -62,7 +70,9 @@ def render_scenes(q="l",
         print(scene_name)
         if scene_names is None or scene_name in scene_names:
            print(f"Rendering: {scene_name}")
-           os.system(f"manim -q{q} -v WARNING --disable_caching "
+           os.system(f"manim " 
+                     f"{'-q' +  q + ' ' if q else ' '}"
+                     f"-v WARNING --disable_caching "
                      f"{' --fps ' + str(fps) if fps else ''} "
                      f"{' -p' if play else ''} "
                      f"{' -g' if frames_only else ''} "
