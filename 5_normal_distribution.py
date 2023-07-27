@@ -455,7 +455,5 @@ from manim import config
 
 # execute all scene renders
 if __name__ == "__main__":
-    # render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
+    render_scenes(q="l", play=True, scene_names=["TiledScene"])
     # render_scenes(q="k")
-    mobj = NormalDistributionTex(fill_color=BLACK)
-    mobj.to_svg()

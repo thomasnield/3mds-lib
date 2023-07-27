@@ -36,7 +36,10 @@ def mobj_to_svg(mob, filename: str,  trim=True, padding=0, w_padding=0, h_paddin
         else:
             create_svg_from_vmobject(mob, filename)
 
-        print(r"![img](data:image/svg+xml;base64," + base64.b64encode(open(filename,"rb").read()).decode('ascii') + ")")
+        file_to_base_64(filename)
+
+def file_to_base_64(filename):
+    print(r"![img](data:image/" + (r"svg+xml" if filename.endswith("svg") else "png") + r";base64," + base64.b64encode(open(filename, "rb").read()).decode('ascii') + ")")
 
 def load_file(filepath):
     file = open(filepath, mode='r')
