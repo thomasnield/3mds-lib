@@ -5,8 +5,8 @@ from threemds.utils import render_scenes, file_to_base_64, mobj_to_svg
 config.background_color = "WHITE"
 config.frame_rate = 60
 #config.frame_width = 7
-config.frame_height = 7
-config.frame_width = 12
+#config.frame_height = 7
+#config.frame_width = 12
 #config.pixel_width = 420
 #config.pixel_height = 420
 
@@ -212,6 +212,5 @@ class ThreeDZeroDeterminantScene(ThreeDScene):
         self.wait()
 
 
-
 if __name__ == "__main__":
-    render_scenes(q='l', scene_names=['ThreeDDeterminantScene'])
+    render_scenes(q='l', scene_names=['ThreeDZeroDeterminantScene'])
