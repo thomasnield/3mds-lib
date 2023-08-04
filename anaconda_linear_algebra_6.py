@@ -137,9 +137,9 @@ class NeuralNetworkScene(MovingCameraScene):
         ).arrange(DOWN)
 
         # OUTPUT LAYER
-        output_label_text = r"w_4(w_1 x_1 + w_2 x_2 + w_3 x_3 + b_1) \\ " \
-                            r"+ w_5(w_4 x_1 + w_5 x_2 + w_6 x_3 + b_2) \\" \
-                            r"+ w_6(w_7 x_1 + w_8 x_2 + w_9 x_3 + b_3) \\" \
+        output_label_text = r"w_{10}(w_1 x_1 + w_2 x_2 + w_3 x_3 + b_1) \\ " \
+                            r"+ w_{11}(w_4 x_1 + w_5 x_2 + w_6 x_3 + b_2) \\" \
+                            r"+ w_{12}(w_7 x_1 + w_8 x_2 + w_9 x_3 + b_3) \\" \
                             r"+ b_4"
 
         output_layer = VGroup(
@@ -232,20 +232,18 @@ class NeuralNetworkScene(MovingCameraScene):
         new_lbl1 = MathTex(r"y", r"<", r"0.5", color=BLACK).move_to(output_layer[0])
         new_lbl2 = MathTex(r"y", r"\geq", r"0.5", color=BLACK).move_to(output_layer[0])
 
-        dark_label = Text("DARK", color=BLACK).next_to(output_layer[0], DOWN)
-        light_label = Text("LIGHT", color=WHITE).add_background_rectangle(color=BLACK).next_to(output_layer[0], DOWN)
-        self.play(FadeIn(dark_label), ReplacementTransform(lbl, new_lbl1))
+        light_label = Text("LIGHT", color=WHITE) \
+            .add_background_rectangle(color=BLACK) \
+            .next_to(output_layer[0], DOWN)
+
+        dark_label = Text("DARK", color=BLACK) \
+            .next_to(output_layer[0], DOWN)
+
+        self.play(FadeIn(light_label), ReplacementTransform(lbl, new_lbl1))
         self.wait()
-        self.play(dark_label.animate.become(light_label),
 
-                  Rotate(new_lbl1[1], 180*DEGREES),
-
-                  FadeIn(Line(color=BLACK,
-                              start=new_lbl1[1].get_left(),
-                              end=new_lbl2[1].get_right(),
-                              stroke_width=3
-                              ).next_to(new_lbl2[1], DOWN, buff=0)
-                         )
+        self.play(light_label.animate.become(dark_label),
+                  ReplacementTransform(new_lbl1[1], new_lbl2[1])
                   )
         self.wait()
 
