@@ -401,44 +401,172 @@ class PDFScene(Scene):
         self.play(*[FadeOut(mobj) for mobj in [narrow_area, area_label_a_b, a_label, b_label, callout_line]])
         self.wait()
 
-class TiledScene(Scene):
+class TiledScene(MovingCameraScene):
+
     def construct(self):
-        pdf_dist = NormalPDF(mean=data.mean(), std=data.std())
-        cdf_dist = NormalCDF(mean=data.mean(), std=data.std())
 
-        pdf_dist_start = pdf_dist.copy()
+        class PDFPlot(VGroup):
 
-        left = VGroup(pdf_dist, cdf_dist) \
-            .arrange(UP) \
+            def __init__(self, mean, std):
+                super().__init__()
+                f = lambda x: norm.pdf(x, mean,std)
+
+                self.mean = mean
+                self.std = std
+                self.lower_x = mean-std*3
+                self.upper_x = mean+std*3
+
+                axes = Axes(x_range=[self.lower_x, self.upper_x, std],
+                            y_range=[0, f(mean) + .1, (f(mean) + .1) / 4],
+                            x_axis_config={"include_numbers": False,
+                                           "numbers_to_exclude": [mean - 4 * std]
+                                           },
+                            y_axis_config={"include_numbers": True,
+                                           "decimal_number_config": {
+                                               "num_decimal_places": 2
+                                           }
+                                           }
+                            )
+
+                plot = axes.plot(f, color=BLUE)
+                self.add(axes, plot)
+
+                self.f=f
+                self.axes=axes
+                self.plot=plot
+
+            def x2p(self, x):
+                return self.axes.c2p(x, self.f(x))
+
+            def area_to_x(self, x):
+                return self.axes.get_area(self.plot, color=BLUE, x_range=(self.lower_x, x))
+
+
+        class CDFPlot(VGroup):
+            def __init__(self, mean, std):
+                super().__init__()
+                f = lambda x: norm.cdf(x, mean,std)
+
+                axes = Axes(x_range=[mean - 3 * std, mean + 3 * std, std],
+                            y_range=[0, 1.1, .25],
+                            y_axis_config={"include_numbers": True,
+                                           "decimal_number_config": {
+                                               "num_decimal_places": 2
+                                            }
+                                           }
+                )
+
+                plot = axes.plot(f, color=RED)
+
+                self.add(axes, plot)
+                self.f=f
+                self.axes=axes
+                self.plot=plot
+
+            def x2p(self, x):
+                return self.axes.c2p(x, self.f(x))
+
+            def plot_to_x(self, x):
+                return self.axes.plot(self.f, color=RED, x_range=[mean - 3 * std, x])
+
+        class PPFPlot(VGroup):
+            def __init__(self, mean, std):
+                super().__init__()
+                f = lambda x: norm.ppf(x, mean,std)
+
+                axes = Axes(x_range=[.001,.999,.05],
+                            y_range=[mean-3*std, mean+3*std, std],
+                            x_length=4,
+                            x_axis_config= {
+                                "numbers_to_include" : [0,.25,.5,.75,1]
+                            }
+                )
+
+                plot = axes.plot(f, color=ORANGE, use_smoothing=True)
+
+                self.add(axes, plot)
+                self.f=f
+                self.axes=axes
+                self.plot=plot
+
+            def p2p(self, p):
+                return self.axes.c2p(p, self.f(p))
+
+
+        mean,std = data.mean(), data.std()
+
+        # create PDF and CDF, stack them vertically
+        pdf_model = PDFPlot(mean, std)
+        cdf_model = CDFPlot(mean, std)
+        ppf_model = PPFPlot(mean, std).to_edge(RIGHT)
+
+        left_panel = VGroup(cdf_model, pdf_model) \
+            .arrange(DOWN) \
             .scale_to_fit_height(7)
 
-        # create PPF off CDF through rotation
-        ppf_dist = cdf_dist.copy().rotate(180 * DEGREES, axis=X_AXIS) \
-            .rotate(90 * DEGREES)
+        self.add(pdf_model)
 
-        ppf_dist.cdf_plot.set_color(ORANGE)
-
-        right = VGroup(ppf_dist)
-        tiles = VGroup(left, right).arrange(RIGHT)
-
-        # initialize PDF
-        self.add(pdf_dist_start)
+        # start camera on PDF, then zoom out
+        self.camera.frame.save_state()
+        self.camera.frame.scale(0.6).move_to(pdf_model)
         self.wait()
+
         self.play(
-            ReplacementTransform(pdf_dist_start, pdf_dist)
+            Restore(self.camera.frame),
+            FadeIn(cdf_model.axes)
+        )
+        self.wait()
+
+        # animate area being projected
+        x_tracker = ValueTracker(mean-std*3)
+        area = always_redraw(lambda: pdf_model.area_to_x(x_tracker.get_value()))
+        connecting_line = always_redraw(lambda: DashedLine(
+            start=pdf_model.x2p(x_tracker.get_value()),
+            end=cdf_model.x2p(x_tracker.get_value()),
+            color=RED
+            )
+        )
+        cdf_partial_plot = always_redraw(lambda: cdf_model.plot_to_x(x_tracker.get_value()))
+        area_label = always_redraw(lambda: DecimalNumber(cdf_model.f(x_tracker.get_value()), num_decimal_places=2) \
+                                        .scale(.8) \
+                                        .next_to(cdf_model.x2p(x_tracker.get_value()), RIGHT)
+                                   )
+        self.play(FadeIn(area), FadeIn(connecting_line), FadeIn(cdf_partial_plot), FadeIn(area_label))
+        self.play(
+            x_tracker.animate.set_value(mean+3*std),
+            run_time=5
         )
         self.wait()
         self.play(
-            FadeIn(tiles)
+            FadeOut(area),
+            FadeOut(connecting_line),
+            FadeOut(cdf_partial_plot),
+            FadeIn(cdf_model.plot),
+            FadeOut(area_label)
         )
-        # add and then remove PPF
-        right.remove(ppf_dist)
 
-
-        # transition PPF
+        # bump the PDF and CDF to the left edge
+        self.play(
+            left_panel.animate.to_edge(LEFT)
+        )
         self.wait()
-        cdf_copy = cdf_dist.copy()
-        cdf_copy.generate_target(ppf_dist)
+
+        # bring in PPF on right
+        cdf_axes_copy = cdf_model.axes.copy()
+
+        self.play(
+            Rotate(cdf_axes_copy, 180 * DEGREES, axis=X_AXIS)
+        )
+        self.play(
+            Rotate(cdf_axes_copy, 90 * DEGREES)
+        )
+        self.play(
+            FadeTransform(cdf_axes_copy, ppf_model.axes)
+        )
+        self.wait()
+
+        cdf_copy = cdf_model.plot.copy()
+
         self.play(
             Rotate(cdf_copy, 180 * DEGREES, axis=X_AXIS)
         )
@@ -446,14 +574,12 @@ class TiledScene(Scene):
             Rotate(cdf_copy, 90 * DEGREES)
         )
         self.play(
-            cdf_copy.animate.become(ppf_dist),
+            cdf_copy.animate.become(ppf_model.plot),
         )
+        self.wait()
 
-
-
-from manim import config
 
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="l", play=True, scene_names=["TiledScene"])
+    render_scenes(q="l", scene_names=["TiledScene"])
     # render_scenes(q="k")
