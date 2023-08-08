@@ -1,5 +1,5 @@
 from manim import *
-from threemds.utils import render_scenes, mobj_to_svg, mobj_to_png
+from threemds.utils import render_scenes, mobj_to_svg, mobj_to_png, file_to_base_64
 from numpy import array
 
 config.background_color = "WHITE"
@@ -78,7 +78,7 @@ class VectorExamplesScene(Scene):
         v2_lbl = MathTex(r"\vec{b} = \begin{bmatrix} 2 \\ -1 \end{bmatrix}", color=ORANGE)  \
             .next_to(v2.get_end(), DR)
 
-        v3_lbl = MathTex(r"\vec{c} = \begin{bmatrix} -2 \\ 1.5 \end{bmatrix}", color=GREEN) \
+        v3_lbl = MathTex(r"\vec{c} = \begin{bmatrix} -2 \\ -1.5 \end{bmatrix}", color=GREEN) \
             .next_to(v3.get_end(), DL + UP + LEFT)
 
         v4_lbl = MathTex(r"\vec{d} = \begin{bmatrix} -1 \\ 2 \end{bmatrix}", color=PURPLE)  \
@@ -110,7 +110,7 @@ class VectorExamplesDotsScene(Scene):
         v2_lbl = MathTex(r"\vec{b} = \begin{bmatrix} 2 \\ -1 \end{bmatrix}", color=ORANGE)  \
             .next_to(v2.get_end(), DR)
 
-        v3_lbl = MathTex(r"\vec{c} = \begin{bmatrix} -2 \\ 1.5 \end{bmatrix}", color=GREEN) \
+        v3_lbl = MathTex(r"\vec{c} = \begin{bmatrix} -2 \\ -1.5 \end{bmatrix}", color=GREEN) \
             .next_to(v3.get_end(), DL + UP + LEFT)
 
         v4_lbl = MathTex(r"\vec{d} = \begin{bmatrix} -1 \\ 2 \end{bmatrix}", color=PURPLE)  \
@@ -335,4 +335,5 @@ class VectorScaleAndAddScene1(Scene):
         mobj_to_svg(grp, filename="out.svg")
 
 if __name__ == "__main__":
-    render_scenes(q="l", last_scene=True, scene_names=['VectorScaleAndAddScene1'])
+    render_scenes(q="l", last_scene=True, scene_names=['VectorExamplesDotsScene'])
+    file_to_base_64('/Users/thomasnield/git/3mds-lib/media/images/anaconda_linear_algebra_1/04_VectorExamplesDotsScene.png')

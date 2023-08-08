@@ -167,6 +167,8 @@ class ConstantsExamples(ZoomedScene):
             *[e.animate.set_color((WHITE)) for e in [formula.mu, formula.eulers_number, formula.sigmas, formula.pi]]
         )
         self.wait()
+        self.play(FadeOut(formula))
+        self.wait()
 
 class PDFScene(Scene):
     def construct(self):
@@ -191,12 +193,12 @@ class PDFScene(Scene):
         def get_mu_output(): return norm.pdf(get_mu(), get_sigma(),get_sigma())
         def get_sigma_output(): return norm.pdf(z_to_x(1), get_mu(), get_sigma())
 
-        def get_area_x(a,b,color=YELLOW): return \
+        def get_area_x(a,b,color=BLUE): return \
             normpdf.axes.get_area(graph=normpdf.pdf_plot,
                                   x_range=(a, b),
                                   color=color)
 
-        def get_area_z(a_sigma,b_sigma,color=YELLOW): return get_area_x(z_to_x(a_sigma), z_to_x(b_sigma), color)
+        def get_area_z(a_sigma,b_sigma,color=BLUE): return get_area_x(z_to_x(a_sigma), z_to_x(b_sigma), color)
 
         def get_vert_line_x(x: float, color=YELLOW): return DashedLine(
             start= axes.c2p(x, 0),
@@ -218,7 +220,7 @@ class PDFScene(Scene):
         self.add(normpdf)
 
         # show PDF label
-        pdf_label = Text("Probability Density Function (PDF)").to_edge(UP)
+        pdf_label = Tex("Probability Density Function (PDF)").to_edge(UP)
         self.play(FadeIn(pdf_label))
         self.wait()
         self.play(FadeOut(pdf_label))
@@ -304,7 +306,7 @@ class PDFScene(Scene):
         self.wait()
 
         # Show area under the entire curve is 1.0
-        full_area_plot = get_area_z(-4,4,color=YELLOW)
+        full_area_plot = get_area_z(-4,4,color=BLUE)
         full_area_plot_label = MathTex("A = 1.0").move_to(full_area_plot)
 
         self.play(Write(full_area_plot))
@@ -347,7 +349,7 @@ class PDFScene(Scene):
         self.wait()
 
         # Show a narrow area range
-        narrow_area = get_area_x(69,70,color=YELLOW)
+        narrow_area = get_area_x(69,70,color=BLUE)
         self.play(ReplacementTransform(likelihood_vert_line, narrow_area))
         self.wait()
 
@@ -371,7 +373,7 @@ class PDFScene(Scene):
 
         # widen range to 68-71
         self.play(
-            Transform(narrow_area, get_area_x(68,71,color=YELLOW)),
+            Transform(narrow_area, get_area_x(68,71,color=BLUE)),
 
             Transform(area_label_a_b, MathTex("A = ", round(get_cdf(71) - get_cdf(68), 2), color=YELLOW) \
                       .next_to(callout_line.end, RIGHT)),
@@ -384,7 +386,7 @@ class PDFScene(Scene):
 
         # widen range to 64-77
         self.play(
-            Transform(narrow_area, get_area_x(64,77,color=YELLOW)),
+            Transform(narrow_area, get_area_x(64,77,color=BLUE)),
 
             Transform(area_label_a_b, MathTex("A = ", round(get_cdf(77) - get_cdf(64), 2), color=YELLOW) \
                 .next_to(callout_line.end, RIGHT)),
@@ -440,7 +442,6 @@ class TiledScene(MovingCameraScene):
 
             def area_to_x(self, x):
                 return self.axes.get_area(self.plot, color=BLUE, x_range=(self.lower_x, x))
-
 
         class CDFPlot(VGroup):
             def __init__(self, mean, std):
@@ -517,6 +518,15 @@ class TiledScene(MovingCameraScene):
         )
         self.wait()
 
+        # label the CDF
+        cdf_label = Tex("Cumulative Density Function (CDF)") \
+            .scale(.75) \
+            .next_to(cdf_model.plot, LEFT)
+
+        self.play(FadeIn(cdf_label))
+        self.wait()
+        self.play(FadeOut(cdf_label))
+
         # animate area being projected
         x_tracker = ValueTracker(mean-std*3)
         area = always_redraw(lambda: pdf_model.area_to_x(x_tracker.get_value()))
@@ -551,6 +561,10 @@ class TiledScene(MovingCameraScene):
         )
         self.wait()
 
+        # show an area lookup from PDF -> CDF
+
+        # show an area range lookup from PDF -> CDF
+
         # bring in PPF on right
         cdf_axes_copy = cdf_model.axes.copy()
 
@@ -581,5 +595,5 @@ class TiledScene(MovingCameraScene):
 
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="l", scene_names=["TiledScene"])
+    render_scenes(q="k", scene_names=["PDFScene", "TiledScene"])
     # render_scenes(q="k")

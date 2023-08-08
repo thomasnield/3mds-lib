@@ -79,7 +79,7 @@ class NNConnection(VGroup):
             color=BLACK,
             tip_length=0.2
         )
-        self.label = MathTex(f"w_{i + 1}", color=BLACK) \
+        self.label = MathTex(f"w_{{i + 1}}", color=BLACK) \
             .scale(.6) \
             .next_to(self.arrow.get_midpoint(), label_direction)
 
@@ -162,7 +162,7 @@ class NeuralNetworkScene(MovingCameraScene):
         )
 
         # CONNECT HIDDEN TO OUTPUT
-        hidden_to_output = self.connect_layers(hidden_layer, output_layer, 3)
+        hidden_to_output = self.connect_layers(hidden_layer, output_layer, 9)
 
         # DECLARE WEIGHT AND BIAS MATRICES
         w_hidden_latex = MathTex(r"W_{hidden} = \begin{bmatrix} w_1 & w_2 & w_3\\"
