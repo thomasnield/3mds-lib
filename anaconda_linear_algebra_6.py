@@ -79,7 +79,7 @@ class NNConnection(VGroup):
             color=BLACK,
             tip_length=0.2
         )
-        self.label = MathTex(f"w_{{i + 1}}", color=BLACK) \
+        self.label = MathTex("w_{" + str(i + 1) + "}", color=BLACK) \
             .scale(.6) \
             .next_to(self.arrow.get_midpoint(), label_direction)
 

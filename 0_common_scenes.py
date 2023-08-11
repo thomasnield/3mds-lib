@@ -1,7 +1,7 @@
 from manim import *
 
 from threemds.utils import render_scenes
-
+import urllib.request
 
 class LogoScene(Scene):
 
@@ -89,7 +89,29 @@ class TitleScene(Scene):
         self.play(FadeOut(title), FadeOut(subtitle), run_time=2)
 
 
+class ClosingCard(Scene):
+  def construct(self):
+    urllib.request.urlretrieve(r"https://images-na.ssl-images-amazon.com/images/I/51yHtuQ9wAL._SX379_BO1,204,203,200_.jpg", "image1.jpg")
+    urllib.request.urlretrieve(r"https://images-na.ssl-images-amazon.com/images/I/41khDop3M4L._SX379_BO1,204,203,200_.jpg", "image2.jpg")
+
+    title = Text("Thank You! Please Support").set_color(BLUE).to_edge(UL)
+
+    books = Group(
+      ImageMobject(r"image1.jpg"),
+      ImageMobject(r"image2.jpg")
+    ).scale(1.3).arrange(RIGHT,buff=.8).next_to(title,DOWN,buff=.8,aligned_edge=LEFT)
+
+    rects = VGroup(
+      Rectangle(width=16/4,height=9/4,color=BLUE),
+      Rectangle(width=16/4,height=9/4,color=BLUE)
+    ).arrange(DOWN).next_to(books, buff=.8, aligned_edge=UP)
+
+
+    self.play(*[FadeIn(mobj) for mobj in (title, books)])
+
+    self.wait(2)
+
 # execute all scene renders
 if __name__ == "__main__":
     #render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
-    render_scenes(q="k")
+    render_scenes(q="k", scene_names=["ClosingCard"])
