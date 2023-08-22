@@ -99,19 +99,20 @@ class ClosingCard(Scene):
     books = Group(
       ImageMobject(r"image1.jpg"),
       ImageMobject(r"image2.jpg")
-    ).scale(1.3).arrange(RIGHT,buff=.8).next_to(title,DOWN,buff=.8,aligned_edge=LEFT)
+    ).scale(.9).arrange(RIGHT,buff=.8).next_to(title,DOWN,buff=.8,aligned_edge=LEFT)
 
-    rects = VGroup(
-      Rectangle(width=16/4,height=9/4,color=BLUE),
-      Rectangle(width=16/4,height=9/4,color=BLUE)
-    ).arrange(DOWN).next_to(books, buff=.8, aligned_edge=UP)
+    source_code = Tex("Source code in description", color=BLUE) \
+        .next_to(books, DOWN, aligned_edge=LEFT,buff=1)
 
+    email = Text(r"thomas@nieldconsultinggroup.com") \
+        .scale(.5) \
+        .next_to(source_code, DOWN, aligned_edge=LEFT)
 
-    self.play(*[FadeIn(mobj) for mobj in (title, books)])
+    self.play(*[FadeIn(mobj) for mobj in (title, books, source_code, email)])
 
     self.wait(2)
 
 # execute all scene renders
 if __name__ == "__main__":
     #render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
-    render_scenes(q="k", scene_names=["ClosingCard"])
+    render_scenes(q="k", scene_names=["LogoScene"], last_scene=True)

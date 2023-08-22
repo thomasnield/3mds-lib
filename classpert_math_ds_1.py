@@ -149,17 +149,24 @@ class VectorNotation(Scene):
 
         mobj_to_svg(tex, "out.svg")
 
-class VectorInNumpy(Scene):
+class CodeRender(Scene):
 
     def construct(self):
 
         raw_code="""import numpy as np
-v = np.array([2,3])
-print(v) # [2 3]"""
+
+A = np.array([[2, 1],
+              [-1, -2]])
+
+A_inv = np.linalg.inv(A)
+B = np.array([5,-4])
+
+print(A_inv @ B) # [2. 1.]
+"""
 
         code=Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
         self.add(code)
-        #mobj_to_svg(VGroup(code), "out.svg")
+        mobj_to_svg(VGroup(code), "out.svg")
 
 
 class ThreeDVectorScene(ThreeDScene):
@@ -253,5 +260,279 @@ class AddVectorFormula(Scene):
         self.add(math_tex)
         #mobj_to_svg(math_tex, "out.svg")
 
+class ScaleVector1(Scene):
+    def construct(self):
+
+        ax = NumberPlane(x_range=(-1.5,4.5,1),
+                         y_range=(-1.5,4.5,1)
+        )
+        _v = np.array([1,2,0])
+        _w = 2*_v
+        v = Vector(_v, color=RED) \
+            .put_start_and_end_on(ax.get_origin(), ax.c2p(*_v[:2]))
+
+        v_lbl = MathTex(r"\vec{v}", color=RED) \
+            .next_to(v.get_midpoint(), RIGHT)
+
+        w = Vector(_w, color=BLUE) \
+            .put_start_and_end_on(ax.get_origin(), ax.c2p(*_w[:2]))
+
+        w_lbl = MathTex(r"\vec{2v}", color=BLUE) \
+            .next_to(w.get_midpoint(), RIGHT)
+
+        grp1 = VGroup(ax,v, v_lbl)
+        grp2 = VGroup(ax.copy(), w, w_lbl)
+
+        dual_pane = VGroup(grp1, grp2) \
+            .arrange(DOWN,buff=1) \
+            .scale_to_fit_height(8)
+
+        self.add(dual_pane)
+        mobj_to_svg(dual_pane, filename="out.svg")
+
+class ScaleVector2(Scene):
+    def construct(self):
+
+        ax = NumberPlane(x_range=(-.5,3.5,1),
+                         y_range=(-.5,3.5,1)
+        )
+        _v = np.array([1,2,0])
+        _w = .5*_v
+        v = Vector(_v, color=RED) \
+            .put_start_and_end_on(ax.get_origin(), ax.c2p(*_v[:2]))
+
+        v_lbl = MathTex(r"\vec{v}", color=RED) \
+            .next_to(v.get_midpoint(), RIGHT)
+
+        w = Vector(_w, color=BLUE) \
+            .put_start_and_end_on(ax.get_origin(), ax.c2p(*_w[:2]))
+
+        w_lbl = MathTex(r".5\vec{v}", color=BLUE) \
+            .next_to(w.get_midpoint(), RIGHT)
+
+        grp1 = VGroup(ax,v, v_lbl)
+        grp2 = VGroup(ax.copy(), w, w_lbl)
+
+        dual_pane = VGroup(grp1, grp2) \
+            .arrange(RIGHT,buff=1) \
+            .scale_to_fit_height(8)
+
+        self.add(dual_pane)
+        mobj_to_svg(dual_pane, filename="out.svg")
+
+class ScaleVector3(Scene):
+    def construct(self):
+
+        ax = NumberPlane(x_range=(-3.5,3.5,1),
+                         y_range=(-3.5,3.5,1)
+        )
+        _v = np.array([1,2,0])
+        _w = -1.5*_v
+        v = Vector(_v, color=RED) \
+            .put_start_and_end_on(ax.get_origin(), ax.c2p(*_v[:2]))
+
+        v_lbl = MathTex(r"\vec{v}", color=RED) \
+            .next_to(v.get_midpoint(), RIGHT)
+
+        w = Vector(_w, color=BLUE) \
+            .put_start_and_end_on(ax.get_origin(), ax.c2p(*_w[:2]))
+
+        w_lbl = MathTex(r"-1.5\vec{v}", color=BLUE) \
+            .next_to(w.get_midpoint(), LEFT)
+
+        grp1 = VGroup(ax,v, v_lbl)
+        grp2 = VGroup(ax.copy(), w, w_lbl)
+
+        dual_pane = VGroup(grp1, grp2) \
+            .arrange(RIGHT,buff=1) \
+            .scale_to_fit_height(8)
+
+        self.add(dual_pane)
+        mobj_to_svg(dual_pane, filename="out.svg")
+
+class ScaleVectorFormula(Scene):
+    def construct(self):
+        _v = np.array([1,2,0])
+        _w = 2*_v
+        tex = MathTex(r"2\vec{v} &= 2", sp.latex(sp.Matrix(_v[:2])).replace("pmatrix", "bmatrix"),
+                      r"\\ &= ", sp.latex(sp.Matrix(_w[:2])).replace("pmatrix", "bmatrix"))
+        self.add(tex)
+        mobj_to_svg(tex, 'out.svg')
+
+
+class MatrixTransformation(LinearTransformationScene):
+    def construct(self):
+
+        A = np.array([[2,1],[-1,-2]])
+        self.add_plane(animate=False)
+        self.add_vector([2,1], animate=False, color=YELLOW)
+        self.get_basis_vectors()
+        self.apply_matrix(A)
+
+class MatrixNotation(Scene):
+    def construct(self):
+        I = np.array([[1,0],[0,1]])
+        A = np.array([[2,1],[-1,-2]])
+
+        I_tex = MathTex("I=", sp.latex(sp.Matrix(I)))
+        A_tex = MathTex("A=", sp.latex(sp.Matrix(A)))
+
+        i_col_I = VGroup(*[mobj for i, mobj in enumerate(I_tex[1]) if i in (1,3)])
+        j_col_I = VGroup(*[mobj for i, mobj in enumerate(I_tex[1]) if i in (2,4)])
+        i_col_I.set_color(GREEN)
+        j_col_I.set_color(RED)
+
+        i_col_A = VGroup(*[mobj for i, mobj in enumerate(A_tex[1]) if i in (1,3,4)])
+        j_col_A = VGroup(*[mobj for i, mobj in enumerate(A_tex[1]) if i in (2,5,6)])
+        i_col_A.set_color(GREEN)
+        j_col_A.set_color(RED)
+
+        i_hat = MathTex(r"\hat{i}", color=GREEN)
+        j_hat = MathTex(r"\hat{j}", color=RED)
+
+        i_hat.next_to(i_col_A, DOWN)
+        j_hat.next_to(j_col_A, DOWN)
+
+
+        mobj_to_svg(VGroup(I_tex), 'out.svg')
+
+class MatrixVectorNotation(Scene):
+    def construct(self):
+        A = np.array([[2,1],
+                      [-1,-2]]
+                     )
+        v = np.array([2,1])
+
+        tex = MathTex(r"A\vec{v} &= ", sp.latex(sp.Matrix(A)), r"\cdot", sp.latex(sp.Matrix(v)),
+                      r"\\ &=", r"\begin{bmatrix} (2)(2) + (1)(1) \\ (-1)(2) + (1)(-2) \end{bmatrix}",
+                      r"\\ &=", sp.latex(sp.Matrix(A @ v))
+                      )
+        self.add(tex)
+        mobj_to_svg(tex, 'out.svg')
+
+class LinearDependence(LinearTransformationScene):
+    def construct(self):
+        self.add_plane(animate=False)
+        self.add_vector([2,1], animate=False, color=YELLOW)
+        self.get_basis_vectors()
+        self.apply_matrix(np.array([[-1,1],[2,-2]]))
+
+class ZeroDeterminantScene(LinearTransformationScene):
+    """
+    config.frame_width = 7
+    config.frame_height = 7
+    config.pixel_width = 420
+    config.pixel_height = 420
+    """
+    def __init__(self):
+        LinearTransformationScene.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=True
+        )
+
+    def construct(self):
+        sq = Square(side_length=1, fill_opacity=.4, fill_color=YELLOW, stroke_opacity=0) \
+            .move_to(self.plane.c2p(0,0), aligned_edge=DL)
+
+        self.add_transformable_mobject(sq)
+        self.apply_matrix(np.array([[-1,1],[2,-2]]))
+
+class CombinedMatrixTransformationScene(LinearTransformationScene):
+
+    def __init__(self):
+        LinearTransformationScene.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=True
+        )
+
+    def construct(self):
+        A = np.array([[2,0],
+                      [0,2]])
+
+        B = np.array([[1,0.5],
+                      [0,-1]])
+
+        self.apply_matrix(A@B)
+        self.wait()
+
+class MatrixMultiplicationFormula(Scene):
+    def construct(self):
+
+        a,b,c,d,e,f,g,h = sp.symbols('a b c d e f g h')
+        A = sp.Matrix([[a,b], [c,d]])
+        B = sp.Matrix([[e,f],[g,h]])
+
+        A_latex = sp.latex(A)
+        B_latex = sp.latex(B)
+        AB_latex = sp.latex(A.multiply(B))
+
+        mathtex=MathTex("AB &= ", A_latex, B_latex, r"\\&=", AB_latex)
+        mobj_to_svg(mathtex, 'out.svg')
+
+        subs_mathex= ("AB &= " + A_latex + B_latex + r"\\&=" + AB_latex)
+
+        mobj_to_svg(MathTex(subs_mathex), 'out_subs.svg')
+
+
+class MatrixVectorMultiplicationFormula(Scene):
+    def construct(self):
+
+        a,b,c,d,x,y = sp.symbols('a b c d x y')
+        A = sp.Matrix([[a,b], [c,d]])
+        v = sp.Matrix([[x],[y]])
+
+        A_latex = sp.latex(A)
+        v_latex = sp.latex(v)
+
+        Av_latex = sp.latex(A.multiply(v))
+
+        mathtex=MathTex(r"A\vec{v} &= ", A_latex, v_latex, r"\\&=", Av_latex)
+        mobj_to_svg(mathtex, 'out.svg')
+
+        subs_mathex= (r"A\vec{v} &= " + A_latex + v_latex + r"\\&=" + Av_latex)
+
+        mobj_to_svg(MathTex(subs_mathex), 'out.svg')
+
+class InverseMatrixFormula(Scene):
+    def construct(self):
+        A = sp.Matrix([[2,1],
+                      [-1,-2]])
+
+        v = sp.Matrix([5,-4,0])
+
+        A_inv = sp.inv_quick(A)
+
+        tex = VGroup(
+            MathTex(r"A =", sp.latex(A)),
+            MathTex(r"A^{-1} =", sp.latex(A_inv)),
+            MathTex(r"A^{-1} A =", sp.latex(A_inv@A))
+        ).arrange(DOWN, aligned_edge=LEFT)
+
+        mobj_to_svg(tex, 'out.svg')
+
+class SimpleSystemEquationsFormula(Scene):
+    def construct(self):
+
+        x,y = sp.symbols('x y')
+        sos = r"2x + 1y &= 5 \\-1x - 2y &= -4"
+
+        A = sp.Matrix([[2,1],
+                      [-1,-2]])
+
+        x = sp.Matrix([[x],[y]])
+        b = sp.Matrix([[5], [-4]])
+
+        axb_latex = r"AX &= B\\",
+        axb_subs_latex = sp.latex(sp.inv_quick(A) @ b) + r"&=" + sp.latex(x)
+
+        tex = MathTex(axb_subs_latex) #sp.latex(sp.inv_quick(A)))
+
+        mobj_to_svg(tex, 'out.svg')
+
+
 if __name__ == "__main__":
-    render_scenes(q="l", transparent=True, scene_names=['AddVectorScene', 'AddVectorFormula'])
+    render_scenes(q="l", transparent=False, scene_names=['CodeRender'])

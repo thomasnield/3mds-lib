@@ -1,26 +1,7 @@
-"""
-Script
-* Plot numberline
-* Plot histogram with different sized bins, and fit curve
-* Show area of curve is not useful, but when animated to scaled down to 1.0 it creates a probability distribution.
-* Emphasize properties including symmetry and apread
-* Show probability of single point is 0, and how areas of ranges creates probabilities
-* Show reimann sums to calculate area briefly
-* Zoom out and show CDF being drawn by a projecting libe from PDf
-* Show subtraction operations to calculate middle ranges
-* Zoom out and show CDF transforming a copy of its plot into an inverse CDF on another tile
-* Demonstrate inverse CDF, and trace an inverse CDF lookup back to the PDF
-
-
-"""
-
-import math
-
-import scipy.stats
 from scipy.stats import norm
 from threemds.stats.plots import DottedNumberLine, Histogram
 from threemds.stats.formulas import *
-from threemds.probability.distributions import  *
+from threemds.probability.distributions import *
 from threemds.utils import render_scenes
 
 data = np.array([65.27153711, 61.69996242, 60.98565375, 65.30031155, 63.51806848, 68.19351011
@@ -43,10 +24,12 @@ data = np.array([65.27153711, 61.69996242, 60.98565375, 65.30031155, 63.51806848
 
 create_number_line = lambda: DottedNumberLine(data)
 
+
 class NumberLineScene(Scene):
     def construct(self):
         self.play(LaggedStart(Write(create_number_line())))
         self.wait()
+
 
 class HistogramScene(Scene):
     def construct(self):
@@ -56,22 +39,22 @@ class HistogramScene(Scene):
         hist = Histogram(data, 300, show_points=False, show_normal_dist=False)
 
         bin_text_fn = lambda bin_ct, hist: MathTex("k = ", bin_ct).next_to(hist, DOWN)
-        bin_text = bin_text_fn(300,hist)
+        bin_text = bin_text_fn(300, hist)
 
         self.add(nl)
         self.wait()
         self.play(FadeOut(nl.nl))
         self.wait()
-        self.play(ReplacementTransform(nl.dots,hist.dots))
+        self.play(ReplacementTransform(nl.dots, hist.dots))
         self.wait()
         self.play(Create(hist, lag_ratio=.1), Create(bin_text, lag_ratio=.1))
         self.wait()
 
         # Animate bin changes
-        bin_sizes = [200, 100, 80, 70, 50, 30, 20,14,13,12,11]
+        bin_sizes = [200, 100, 80, 70, 50, 30, 20, 14, 13, 12, 11]
         include_norm_dist_inds = [b < 30 for b in bin_sizes]
 
-        for i,s,b in zip(range(0,len(bin_sizes)), bin_sizes, include_norm_dist_inds):
+        for i, s, b in zip(range(0, len(bin_sizes)), bin_sizes, include_norm_dist_inds):
             new_hist = Histogram(data,
                                  bin_count=s,
                                  show_points=False,
@@ -80,13 +63,14 @@ class HistogramScene(Scene):
             new_bin_text = bin_text_fn(s, new_hist)
 
             replace_hist = lambda new_hist=new_hist, hist=hist: self.play(ReplacementTransform(hist, new_hist),
-                                             ReplacementTransform(hist.dots, new_hist.dots))
+                                                                          ReplacementTransform(hist.dots,
+                                                                                               new_hist.dots))
 
             replace_hist_and_plot = lambda new_hist=new_hist, hist=hist: self.play(
-                                                      ReplacementTransform(hist, new_hist),
-                                                      ReplacementTransform(hist.dots, new_hist.dots),
-                                                      ReplacementTransform(hist.normal_dist_plot, new_hist.normal_dist_plot)
-                                                     )
+                ReplacementTransform(hist, new_hist),
+                ReplacementTransform(hist.dots, new_hist.dots),
+                ReplacementTransform(hist.normal_dist_plot, new_hist.normal_dist_plot)
+            )
 
             # update bin count label
             self.remove(bin_text)
@@ -94,7 +78,7 @@ class HistogramScene(Scene):
             bin_text = new_bin_text
 
             # handle transition to showing the normal distribution
-            if i > 0 and (not include_norm_dist_inds[i-1]) and b:
+            if i > 0 and (not include_norm_dist_inds[i - 1]) and b:
                 replace_hist()
                 self.wait()
                 self.play(Write(new_hist.normal_dist_plot))
@@ -109,18 +93,19 @@ class HistogramScene(Scene):
         ## brace bar width
         braced_bar = hist.bars[2]
         brace = Brace(braced_bar, DOWN)
-        brace_text = brace.get_text(round(hist.bin_width,2))
+        brace_text = brace.get_text(round(hist.bin_width, 2))
         self.play(LaggedStart(Write(brace), Write(brace_text)), FadeOut(bin_text))
         self.wait()
 
+
 class ConstantsExamples(ZoomedScene):
 
-  def construct(self):
+    def construct(self):
         normpdf = NormalPDF(mean=data.mean(),
-                          std=data.std(),
-                          show_x_axis_labels=X_LABELS,
-                          show_area_plot=False
-                          )
+                            std=data.std(),
+                            show_x_axis_labels=X_LABELS,
+                            show_area_plot=False
+                            )
 
         formula = NormalDistributionTex().scale(1).to_edge(UR)
 
@@ -131,11 +116,10 @@ class ConstantsExamples(ZoomedScene):
         self.play(Write(formula))
         self.wait()
 
-
         # highlight mu and sigma
         self.play(formula.mu.animate.set_color(YELLOW),
                   Circumscribe(formula.mu, color=YELLOW)
-        )
+                  )
         self.wait()
         self.play(formula.sigmas.animate.set_color(BLUE),
                   *[Circumscribe(s, color=BLUE) for s in formula.sigmas]
@@ -170,9 +154,9 @@ class ConstantsExamples(ZoomedScene):
         self.play(FadeOut(formula))
         self.wait()
 
+
 class PDFScene(Scene):
     def construct(self):
-
         # intialize objects and helper functions
         normpdf = NormalPDF(mean=data.mean(),
                             std=data.std(),
@@ -185,32 +169,39 @@ class PDFScene(Scene):
         sigma_tracker = ValueTracker(data.std())
 
         def get_mu(): return mu_tracker.get_value()
+
         def get_sigma(): return sigma_tracker.get_value()
+
         def get_pdf(x): return norm.pdf(x, get_mu(), get_sigma())
+
         def get_cdf(x): return norm.cdf(x, get_mu(), get_sigma())
+
         def get_ppf(p): return norm.ppf(p, get_mu(), get_sigma())
-        def z_to_x(z): return get_mu() + z*get_sigma()
-        def get_mu_output(): return norm.pdf(get_mu(), get_sigma(),get_sigma())
+
+        def z_to_x(z): return get_mu() + z * get_sigma()
+
+        def get_mu_output(): return norm.pdf(get_mu(), get_sigma(), get_sigma())
+
         def get_sigma_output(): return norm.pdf(z_to_x(1), get_mu(), get_sigma())
 
-        def get_area_x(a,b,color=BLUE): return \
+        def get_area_x(a, b, color=BLUE): return \
             normpdf.axes.get_area(graph=normpdf.pdf_plot,
                                   x_range=(a, b),
                                   color=color)
 
-        def get_area_z(a_sigma,b_sigma,color=BLUE): return get_area_x(z_to_x(a_sigma), z_to_x(b_sigma), color)
+        def get_area_z(a_sigma, b_sigma, color=BLUE): return get_area_x(z_to_x(a_sigma), z_to_x(b_sigma), color)
 
         def get_vert_line_x(x: float, color=YELLOW): return DashedLine(
-            start= axes.c2p(x, 0),
-            end= axes.c2p(x, get_pdf(x)),
+            start=axes.c2p(x, 0),
+            end=axes.c2p(x, get_pdf(x)),
             color=color
         )
 
         def get_vert_line_z(z: float, color=YELLOW): return get_vert_line_x(z_to_x(z), color)
 
         def get_horz_line_x(x: float, color=YELLOW): return DashedLine(
-            start= axes.c2p(x, get_pdf(x)),
-            end= axes.c2p(z_to_x(-4), get_pdf(x)),
+            start=axes.c2p(x, get_pdf(x)),
+            end=axes.c2p(z_to_x(-4), get_pdf(x)),
             color=color
         )
 
@@ -306,7 +297,7 @@ class PDFScene(Scene):
         self.wait()
 
         # Show area under the entire curve is 1.0
-        full_area_plot = get_area_z(-4,4,color=BLUE)
+        full_area_plot = get_area_z(-4, 4, color=BLUE)
         full_area_plot_label = MathTex("A = 1.0").move_to(full_area_plot)
 
         self.play(Write(full_area_plot))
@@ -323,7 +314,7 @@ class PDFScene(Scene):
 
         likelihood_horz_line = get_horz_line_z(1.5)
 
-        x_value_lookup_label = MathTex(round(z_to_x(1.5),2), color=YELLOW) \
+        x_value_lookup_label = MathTex(round(z_to_x(1.5), 2), color=YELLOW) \
             .next_to(likelihood_vert_line, DOWN) \
             .scale(.75)
 
@@ -349,13 +340,13 @@ class PDFScene(Scene):
         self.wait()
 
         # Show a narrow area range
-        narrow_area = get_area_x(69,70,color=BLUE)
+        narrow_area = get_area_x(69, 70, color=BLUE)
         self.play(ReplacementTransform(likelihood_vert_line, narrow_area))
         self.wait()
 
         # add range labels for range 69-70
-        a_label = MathTex(69, color=YELLOW).scale(.75).next_to(axes.c2p(69,0), DOWN)
-        b_label = MathTex(70, color=YELLOW).scale(.75).next_to(axes.c2p(70,0), DOWN)
+        a_label = MathTex(69, color=YELLOW).scale(.75).next_to(axes.c2p(69, 0), DOWN)
+        b_label = MathTex(70, color=YELLOW).scale(.75).next_to(axes.c2p(70, 0), DOWN)
 
         self.play(Write(a_label), Write(b_label))
         self.wait()
@@ -373,52 +364,54 @@ class PDFScene(Scene):
 
         # widen range to 68-71
         self.play(
-            Transform(narrow_area, get_area_x(68,71,color=BLUE)),
+            Transform(narrow_area, get_area_x(68, 71, color=BLUE)),
 
             Transform(area_label_a_b, MathTex("A = ", round(get_cdf(71) - get_cdf(68), 2), color=YELLOW) \
                       .next_to(callout_line.end, RIGHT)),
 
-            Transform(a_label, MathTex(68, color=YELLOW).scale(.75).next_to(axes.c2p(68,0), DOWN)),
+            Transform(a_label, MathTex(68, color=YELLOW).scale(.75).next_to(axes.c2p(68, 0), DOWN)),
 
-            Transform(b_label, MathTex(71, color=YELLOW).scale(.75).next_to(axes.c2p(71,0), DOWN))
+            Transform(b_label, MathTex(71, color=YELLOW).scale(.75).next_to(axes.c2p(71, 0), DOWN))
         )
         self.wait()
 
         # widen range to 64-77
         self.play(
-            Transform(narrow_area, get_area_x(64,77,color=BLUE)),
+            Transform(narrow_area, get_area_x(64, 77, color=BLUE)),
 
             Transform(area_label_a_b, MathTex("A = ", round(get_cdf(77) - get_cdf(64), 2), color=YELLOW) \
-                .next_to(callout_line.end, RIGHT)),
+                      .next_to(callout_line.end, RIGHT)),
 
-            Transform(a_label, MathTex(64, color=YELLOW)\
-                      .scale(.75)\
-                      .next_to(axes.c2p(64,0), DOWN)),
+            Transform(a_label, MathTex(64, color=YELLOW) \
+                      .scale(.75) \
+                      .next_to(axes.c2p(64, 0), DOWN)),
 
-            Transform(b_label, MathTex(77, color=YELLOW)\
-                      .scale(.75)\
-                      .next_to(axes.c2p(77,0), DOWN))
+            Transform(b_label, MathTex(77, color=YELLOW) \
+                      .scale(.75) \
+                      .next_to(axes.c2p(77, 0), DOWN))
         )
         self.wait()
         self.play(*[FadeOut(mobj) for mobj in [narrow_area, area_label_a_b, a_label, b_label, callout_line]])
         self.wait()
 
+
 class TiledScene(MovingCameraScene):
 
     def construct(self):
-        skip_animations=False
+        skip_animations = False
 
         # Declare PDF model
         class PDFPlot(VGroup):
 
             def __init__(self, mean, std):
                 super().__init__()
-                f = lambda x: norm.pdf(x, mean,std)
+
+                f = lambda x: norm.pdf(x, mean, std)
 
                 self.mean = mean
                 self.std = std
-                self.lower_x = mean-std*3
-                self.upper_x = mean+std*3
+                self.lower_x = mean - std * 3
+                self.upper_x = mean + std * 3
 
                 axes = Axes(x_range=[self.lower_x, self.upper_x, std],
                             y_range=[0, f(mean) + .1, (f(mean) + .1) / 4],
@@ -435,9 +428,9 @@ class TiledScene(MovingCameraScene):
                 plot = axes.plot(f, color=BLUE)
                 self.add(axes, plot)
 
-                self.f=f
-                self.axes=axes
-                self.plot=plot
+                self.f = f
+                self.axes = axes
+                self.plot = plot
 
             def x2p(self, x):
                 return self.axes.c2p(x, self.f(x))
@@ -449,23 +442,23 @@ class TiledScene(MovingCameraScene):
         class CDFPlot(VGroup):
             def __init__(self, mean, std):
                 super().__init__()
-                f = lambda x: norm.cdf(x, mean,std)
+                f = lambda x: norm.cdf(x, mean, std)
 
                 axes = Axes(x_range=[mean - 3 * std, mean + 3 * std, std],
                             y_range=[0, 1.1, .25],
                             y_axis_config={"include_numbers": True,
                                            "decimal_number_config": {
                                                "num_decimal_places": 2
-                                            }
                                            }
-                )
+                                           }
+                            )
 
                 plot = axes.plot(f, color=RED)
 
                 self.add(axes, plot)
-                self.f=f
-                self.axes=axes
-                self.plot=plot
+                self.f = f
+                self.axes = axes
+                self.plot = plot
 
             def x2p(self, x):
                 return self.axes.c2p(x, self.f(x))
@@ -482,7 +475,7 @@ class TiledScene(MovingCameraScene):
 
             def horizontal_line(self, x):
                 return DashedLine(
-                    start=self.axes.c2p(-3*std+mean, self.f(x)),
+                    start=self.axes.c2p(-3 * std + mean, self.f(x)),
                     end=self.axes.c2p(x, self.f(x)),
                     color=RED
                 )
@@ -491,29 +484,29 @@ class TiledScene(MovingCameraScene):
         class PPFPlot(VGroup):
             def __init__(self, mean, std):
                 super().__init__()
-                f = lambda x: norm.ppf(x, mean,std)
+                f = lambda x: norm.ppf(x, mean, std)
 
-                axes = Axes(x_range=[.001,.999,.05],
-                            y_range=[mean-3*std, mean+3*std, std],
+                axes = Axes(x_range=[.001, .999, .05],
+                            y_range=[mean - 3 * std, mean + 3 * std, std],
                             x_length=4,
-                            x_axis_config= {
-                                "numbers_to_include" : [0,.25,.5,.75,1]
+                            x_axis_config={
+                                "numbers_to_include": [0, .25, .5, .75, 1]
                             }
-                )
+                            )
 
                 plot = axes.plot(f, color=ORANGE, use_smoothing=True)
 
                 self.add(axes, plot)
-                self.f=f
-                self.axes=axes
-                self.plot=plot
+                self.f = f
+                self.axes = axes
+                self.plot = plot
 
             def p2p(self, p):
                 return self.axes.c2p(p, self.f(p))
 
             def vertical_line(self, p):
                 return DashedLine(
-                    start=self.axes.c2p(p,-3*std+mean),
+                    start=self.axes.c2p(p, -3 * std + mean),
                     end=self.axes.c2p(p, self.f(p)),
                     color=RED
                 )
@@ -525,7 +518,7 @@ class TiledScene(MovingCameraScene):
                     color=RED
                 )
 
-        mean,std = data.mean(), data.std()
+        mean, std = data.mean(), data.std()
 
         # create PDF and CDF
         self.next_section("Create PDF and CDF, and zoom out", skip_animations=skip_animations)
@@ -558,24 +551,25 @@ class TiledScene(MovingCameraScene):
         self.next_section("Draw area between PDF and CDF, label both", skip_animations=skip_animations)
 
         # Declare the range for x values on PDF
-        x_upper_tracker = ValueTracker(mean-std*3)
+        x_upper_tracker = ValueTracker(mean - std * 3)
 
         # Declare the area for the PDF which will update based on the trackers above
-        area_color=BLUE
-        area: Mobject = always_redraw(lambda: pdf_model.area_range(-3*std+mean, x_upper_tracker.get_value(), color=area_color))
+        area_color = BLUE
+        area: Mobject = always_redraw(
+            lambda: pdf_model.area_range(-3 * std + mean, x_upper_tracker.get_value(), color=area_color))
 
         # Draw the connecting dashed line between the PDF and CDF projecting the area
         connecting_line: DashedLine = always_redraw(lambda: DashedLine(
             start=pdf_model.x2p(x_upper_tracker.get_value()),
             end=cdf_model.x2p(x_upper_tracker.get_value()),
             color=RED
-            ))
+        ))
 
         # Project the area to the CDF as x_upper increases, also show the area as a decimal
         cdf_partial_plot = always_redraw(lambda: cdf_model.plot_to_x(x_upper_tracker.get_value()))
         area_label = always_redraw(lambda: DecimalNumber(cdf_model.f(x_upper_tracker.get_value()), num_decimal_places=2) \
-                                        .scale(.8) \
-                                        .next_to(cdf_model.x2p(x_upper_tracker.get_value()), RIGHT)
+                                   .scale(.8) \
+                                   .next_to(cdf_model.x2p(x_upper_tracker.get_value()), RIGHT)
                                    )
 
         # Populate the area plot, connecting line, partial CDF plot, area label
@@ -583,7 +577,7 @@ class TiledScene(MovingCameraScene):
 
         # Run the animation for 5 seconds by filling the whole PDF/CDF
         self.play(
-            x_upper_tracker.animate.set_value(mean+3*std),
+            x_upper_tracker.animate.set_value(mean + 3 * std),
             run_time=5
         )
         self.wait()
@@ -620,7 +614,7 @@ class TiledScene(MovingCameraScene):
             .next_to(pdf_model.axes.c2p(70, 0), DOWN)
 
         # reset the x_upper
-        x_upper_tracker.set_value(mean-3*std)
+        x_upper_tracker.set_value(mean - 3 * std)
 
         # fade in the label, move the PDF/CDF to x = 70
         self.play(FadeIn(label_x_eq_70))
@@ -632,7 +626,7 @@ class TiledScene(MovingCameraScene):
         label_cdf_70 = DecimalNumber(cdf_model.f(70), num_decimal_places=3) \
             .next_to(connecting_line.get_top(), UL)
 
-        area_center=pdf_model.axes.c2p(mean,pdf_model.f(mean)*.5)
+        area_center = pdf_model.axes.c2p(mean, pdf_model.f(mean) * .5)
         area_question = Tex("?").move_to(area_center)
         self.play(FadeIn(area_question))
         self.wait()
@@ -640,9 +634,9 @@ class TiledScene(MovingCameraScene):
         # draw the line to look up the area on CDF
         cdf_horz_line: DashedLine = always_redraw(lambda: DashedLine(
             start=cdf_model.x2p(x_upper_tracker.get_value()),
-            end=cdf_model.axes.c2p(-3*std+mean, cdf_model.f(x_upper_tracker.get_value())),
+            end=cdf_model.axes.c2p(-3 * std + mean, cdf_model.f(x_upper_tracker.get_value())),
             color=RED
-            ))
+        ))
         self.play(Write(cdf_horz_line))
         self.wait()
 
@@ -658,7 +652,7 @@ class TiledScene(MovingCameraScene):
 
         # get ready to break up the area into two pieces, from 65 to 70 and left tail to 65
         self.wait()
-        area_65_70 = always_redraw(lambda: pdf_model.area_range(x_upper_tracker.get_value(),70, BLUE))
+        area_65_70 = always_redraw(lambda: pdf_model.area_range(x_upper_tracker.get_value(), 70, BLUE))
         self.add(area_65_70)
 
         # move the area up to 70 to the right side of the screen
@@ -673,13 +667,13 @@ class TiledScene(MovingCameraScene):
             .next_to(pdf_model.axes.c2p(65, 0), DOWN)
 
         # change area color to red, then look up area for x<=65
-        area_color=RED
+        area_color = RED
         self.play(x_upper_tracker.animate.set_value(65),
                   FadeIn(label_x_eq_65)
                   )
 
         # draw the horizontal connecting line on the CDF, also draw question mark
-        area_question = Tex("?").next_to(area_65_70.get_left(), LEFT).shift(LEFT*.20)
+        area_question = Tex("?").next_to(area_65_70.get_left(), LEFT).shift(LEFT * .20)
         self.wait()
         self.play(Write(area_question), Write(cdf_horz_line))
         self.wait()
@@ -697,20 +691,20 @@ class TiledScene(MovingCameraScene):
 
         # move x<=65 area to the right panel, show minus sign and position under it
         area_65_panel = VGroup(area.copy(), label_cdf_65)
-        minus_sign = MathTex("-").scale(4).next_to(area_70_panel, DOWN,buff=.5)
+        minus_sign = MathTex("-").scale(4).next_to(area_70_panel, DOWN, buff=.5)
 
         self.remove(area)
         self.play(FadeIn(minus_sign),
                   area_65_panel.animate.scale(.8).next_to(
-                        minus_sign, DOWN, aligned_edge=area_70_panel.get_left(), buff=.5
+                      minus_sign, DOWN, aligned_edge=area_70_panel.get_left(), buff=.5
                   )
-        )
+                  )
         self.wait()
 
         # create equals sign and put it under the other two plots on right side
         equals_sign = MathTex("=").scale(5) \
             .match_width(minus_sign) \
-            .next_to(VGroup(area_65_panel, area_70_panel), DOWN,buff=.5)
+            .next_to(VGroup(area_65_panel, area_70_panel), DOWN, buff=.5)
 
         # label the area x between 65 and 70
         label_65_70 = DecimalNumber(cdf_model.f(70) - cdf_model.f(65), num_decimal_places=3) \
@@ -783,7 +777,7 @@ class TiledScene(MovingCameraScene):
 
         # label the PPF
         ppf_label = Tex("Probability Point Function (PPF)") \
-            .rotate(90*DEGREES) \
+            .rotate(90 * DEGREES) \
             .scale(.75) \
             .next_to(ppf_model, LEFT)
 
@@ -794,12 +788,13 @@ class TiledScene(MovingCameraScene):
         self.wait()
 
         # Get .75 of area for PPF
-        area_color=BLUE
-        x_upper_tracker.set_value(-3*std+mean)
+        area_color = BLUE
+        x_upper_tracker.set_value(-3 * std + mean)
         x_area_75 = ppf_model.f(.75)
 
         # draw the .75 area
-        area_75: VMobject = always_redraw(lambda: pdf_model.area_range(-3*std+mean,x_upper_tracker.get_value(), color=BLUE))
+        area_75: VMobject = always_redraw(
+            lambda: pdf_model.area_range(-3 * std + mean, x_upper_tracker.get_value(), color=BLUE))
         self.wait()
         self.add(area_75)
         self.play(x_upper_tracker.animate.set_value(x_area_75))
@@ -807,13 +802,13 @@ class TiledScene(MovingCameraScene):
 
         # label the .75 area
         area_75_label = MathTex(".75") \
-            .move_to(pdf_model.axes.c2p(mean, pdf_model.f(mean)*.5))
+            .move_to(pdf_model.axes.c2p(mean, pdf_model.f(mean) * .5))
 
         self.play(FadeIn(area_75_label))
         self.wait()
 
         # move question mark to the x-axis
-        area_question.next_to(pdf_model.axes.c2p(x_area_75, 0), DOWN,buff=.15)
+        area_question.next_to(pdf_model.axes.c2p(x_area_75, 0), DOWN, buff=.15)
         self.play(Write(area_question))
         self.wait()
 
@@ -832,7 +827,7 @@ class TiledScene(MovingCameraScene):
         # reveal the x-value
         x_label_cdf = DecimalNumber(x_area_75, num_decimal_places=2) \
             .scale(.8) \
-            .next_to(cdf_model.axes.c2p(x_area_75, 0), DOWN,buff=.15)
+            .next_to(cdf_model.axes.c2p(x_area_75, 0), DOWN, buff=.15)
 
         x_label_ppf = x_label_cdf.copy() \
             .next_to(ppf_model.axes.c2p(0, x_area_75), LEFT, buff=.15)
@@ -850,5 +845,5 @@ class TiledScene(MovingCameraScene):
 
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="k", scene_names=["TiledScene"])
+    render_scenes(q="l", gif=True, scene_names=["PDFScene"])
     # render_scenes(q="k")
