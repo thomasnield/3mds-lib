@@ -1,8 +1,6 @@
 import math
 import pandas as pd
-import numpy as np
 from manim import *
-
 from threemds.utils import render_scenes
 
 
@@ -12,7 +10,7 @@ class DataPoint(Dot):
         self.x = x
         self.y = y
 
-def create_model(data: pd.DataFrame, initial_m=0.69267212, initial_b=-3.17576395) -> tuple:
+def create_model(data: pd.DataFrame, initial_m: float, initial_b: float) -> tuple:
 
     m_tracker = ValueTracker(initial_m)
     b_tracker = ValueTracker(initial_b)
@@ -53,18 +51,28 @@ def create_model(data: pd.DataFrame, initial_m=0.69267212, initial_b=-3.17576395
 class LogisticRegressionScene(Scene):
 
     def construct(self):
-        url = r"https://raw.githubusercontent.com/thomasnield/machine-learning-demo-data/master/classification/simple_logistic_regression.csv"
-        data, m_tracker, b_tracker, ax, points, true_points, false_points, \
-            plot, f, max_line, likelihood_lines = create_model(data=pd.read_csv(url))
 
-        self.play(LaggedStartMap(Write, ax), Write(max_line),
-                  Write(MathTex("0").scale(.8).next_to(Point(ax.c2p(0, 0)), DL, buff=.2)))
+        # build the logistic regression model
+        url = r"https://raw.githubusercontent.com/thomasnield/machine-learning-demo-data/master/classification/simple_logistic_regression.csv"
+
+        data, m_tracker, b_tracker, ax, points, true_points, false_points, \
+            plot, f, max_line, likelihood_lines = create_model(data=pd.read_csv(url),
+                                                               initial_m=0.69267212,
+                                                               initial_b=-3.17576395
+                                                               )
+
+        # draw and initialize the objects
+        self.play(LaggedStartMap(Write, ax),
+                  Write(max_line),
+                  Write(MathTex("0") \
+                        .scale(.8) \
+                        .next_to(ax.c2p(0, 0), DL, buff=.2)
+                        )
+                  )
         self.wait()
 
         self.play(LaggedStartMap(Write, VGroup(*true_points)))
-        # self.wait()
         self.play(LaggedStartMap(Write, VGroup(*false_points)))
-        # self.wait()
         self.play(Write(plot))
         self.wait()
 
@@ -122,6 +130,7 @@ class LogisticRegressionScene(Scene):
         # trace the curve
         alpha_tracker = ValueTracker(.65)
 
+        # the trace dot that follows the curve
         class TraceDot(Dot):
             def __init__(self, alpha: float):
                 self.point = plot.point_from_proportion(alpha)
@@ -149,11 +158,17 @@ class LogisticRegressionScene(Scene):
         self.play(alpha_tracker.animate.set_value(.65), run_time=1)
         self.wait()
 
-        predict_line_vert = DashedLine(color=YELLOW, dash_length=.3, start=trace_dot.get_center(),
-                                       end=ax.c2p(trace_dot.x, 0))
+        predict_line_vert = DashedLine(color=YELLOW,
+                                       dash_length=.3,
+                                       start=trace_dot.get_center(),
+                                       end=ax.c2p(trace_dot.x, 0)
+                                       )
 
-        predict_line_horz = DashedLine(color=YELLOW, dash_length=.3, start=trace_dot.get_center(),
-                                       end=ax.c2p(0, trace_dot.y))
+        predict_line_horz = DashedLine(color=YELLOW,
+                                       dash_length=.3,
+                                       start=trace_dot.get_center(),
+                                       end=ax.c2p(0, trace_dot.y)
+                                       )
 
         self.play(
             Write(predict_line_vert),
@@ -249,4 +264,4 @@ class LogisticRegressionScene(Scene):
         )
 
 if __name__ == "__main__":
-    render_scenes(q="l", scene_names=['LogisticRegressionScene'])
+    render_scenes(q="k", scene_names=['LogisticRegressionScene'])
