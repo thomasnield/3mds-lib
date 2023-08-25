@@ -12,12 +12,12 @@ text_color="#FFFFFF" #white
 
 config.background_color = CLASSPERT_NAVY
 
-#config.frame_width = 7
-#config.frame_height = 7
-#config.frame_width = 12
-#config.pixel_width = 420
-#config.pixel_height = 420
-
+"""
+config.frame_width = 6
+config.frame_height = 6
+config.pixel_width = 600
+config.pixel_height = 600
+"""
 config.background_color=CLASSPERT_NAVY
 
 def sanitize_code(raw_code):
@@ -274,21 +274,24 @@ class ScaleVector1(Scene):
         v_lbl = MathTex(r"\vec{v}", color=RED) \
             .next_to(v.get_midpoint(), RIGHT)
 
+        self.add(ax, v, v_lbl)
+        self.wait()
+
+        # extend the vector
         w = Vector(_w, color=BLUE) \
             .put_start_and_end_on(ax.get_origin(), ax.c2p(*_w[:2]))
 
-        w_lbl = MathTex(r"\vec{2v}", color=BLUE) \
+        w_lbl = MathTex(r"2\vec{v}", color=BLUE) \
             .next_to(w.get_midpoint(), RIGHT)
 
-        grp1 = VGroup(ax,v, v_lbl)
-        grp2 = VGroup(ax.copy(), w, w_lbl)
+        self.play(
+            v.animate.become(w),
+            v_lbl.animate.become(w_lbl[0][1:]),
+            LaggedStart(FadeIn(w_lbl[0][0]), lag_ratio=1.8),
+            run_time=2
+        )
+        self.wait()
 
-        dual_pane = VGroup(grp1, grp2) \
-            .arrange(DOWN,buff=1) \
-            .scale_to_fit_height(8)
-
-        self.add(dual_pane)
-        mobj_to_svg(dual_pane, filename="out.svg")
 
 class ScaleVector2(Scene):
     def construct(self):
@@ -526,13 +529,13 @@ class SimpleSystemEquationsFormula(Scene):
         x = sp.Matrix([[x],[y]])
         b = sp.Matrix([[5], [-4]])
 
-        axb_latex = r"AX &= B\\",
+        axb_latex = r"A^{-1}AX = A^{-1}B"
         axb_subs_latex = sp.latex(sp.inv_quick(A) @ b) + r"&=" + sp.latex(x)
 
-        tex = MathTex(axb_subs_latex) #sp.latex(sp.inv_quick(A)))
+        tex = MathTex(axb_latex) #sp.latex(sp.inv_quick(A)))
 
         mobj_to_svg(tex, 'out.svg')
 
 
 if __name__ == "__main__":
-    render_scenes(q="l", transparent=False, scene_names=['CodeRender'])
+    render_scenes(q="k", scene_names=['ScaleVector1'])
