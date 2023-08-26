@@ -191,8 +191,8 @@ class NeuralNetworkScene(MovingCameraScene):
         self.add(*[mobj for i,mobj in enumerate(b_hidden_latex[0]) if i not in range(10,16)])
 
         # remove the node labels containing expressions in hidden layer
-        self.remove(*[node.label for node in output_layer],
-                    *[node.label for node in hidden_layer]
+        self.remove(*[node.mathtex_lbl for node in output_layer],
+                    *[node.mathtex_lbl for node in hidden_layer]
                     )
 
         #self.add(b_hidden_latex, index_labels(b_hidden_latex[0], color=RED))
@@ -201,7 +201,7 @@ class NeuralNetworkScene(MovingCameraScene):
         # start cycling through weights on input-hidden
         for i,grp in enumerate(input_to_hidden["groups"]):
             self.add(grp,
-                     hidden_layer[i].label,
+                     hidden_layer[i].mathtex_lbl,
                      *[mobj for j,mobj in enumerate(w_hidden_latex[0]) if j in range(6*i+10,6*i+16)],
                      *[mobj for j, mobj in enumerate(b_hidden_latex[0]) if j in range(2*i+10, 2*i+12)]
                      )
@@ -213,7 +213,7 @@ class NeuralNetworkScene(MovingCameraScene):
         for i,grp in enumerate(hidden_to_output["groups"]):
             self.add(grp,
                      *[mobj for j,mobj in enumerate(w_output_latex[0]) if j in range(3*i+9,3*i+18)],
-                     output_layer[i].label,
+                     output_layer[i].mathtex_lbl,
                      b_output_latex
                      )
 
@@ -228,7 +228,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait(3)
 
         # show light and dark font thresholds
-        lbl = output_layer[0].label
+        lbl = output_layer[0].mathtex_lbl
         new_lbl1 = MathTex(r"y", r"<", r"0.5", color=BLACK).move_to(output_layer[0])
         new_lbl2 = MathTex(r"y", r"\geq", r"0.5", color=BLACK).move_to(output_layer[0])
 

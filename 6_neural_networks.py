@@ -8,15 +8,34 @@ from threemds.utils import render_scenes
 
 
 class NNNode(VGroup):
-    def __init__(self, mathtex_lbl="", label_scale=None, color=WHITE):
+    def __init__(self, mathtex_lbl="",
+                 alt_tex_lbl="",
+                 alt2_tex_lbl="",
+                 label_scale=None,
+                 color=WHITE):
         super().__init__()
+        self.color=color
         self.circle = Circle(color=color, fill_opacity=1 if color!=WHITE else 0)
-        self.label = MathTex(mathtex_lbl)
-        if label_scale:
-            self.label.scale(label_scale)
 
-        self.label.move_to(self.circle)
-        self.add(self.circle, self.label)
+        self.alt_tex_lbl = MathTex(alt_tex_lbl)
+        self.alt_tex_lbl.add_updater(lambda t: t.move_to(self.circle))
+
+        self.alt2_tex_lbl = MathTex(alt2_tex_lbl)
+        self.alt2_tex_lbl.add_updater(lambda t: t.move_to(self.circle))
+
+        self.mathtex_lbl = MathTex(mathtex_lbl)
+
+        if label_scale:
+            self.mathtex_lbl.scale(label_scale)
+            self.alt_tex_lbl.scale(label_scale)
+            self.alt2_tex_lbl.scale(label_scale)
+
+        self.mathtex_lbl.move_to(self.circle)
+        self.alt_tex_lbl.move_to(self.circle)
+        self.alt2_tex_lbl.move_to(self.circle)
+
+        self.add(self.circle, self.mathtex_lbl)
+
 
 class NNConnection(VGroup):
 
@@ -72,19 +91,24 @@ class NeuralNetworkScene(MovingCameraScene):
         return layer_grp
 
     def construct(self):
+        skip_flag = True
+        # =====================================================================================================
+        self.next_section("Declare and initialize", skip_animations=skip_flag)
 
         # INPUT LAYER
         input_layer = VGroup(
-            NNNode("x_1",color=RED),
-            NNNode("x_2",color=GREEN),
-            NNNode("x_3",color=BLUE)
+            NNNode("x_1", alt_tex_lbl="1.0", color=RED),
+            NNNode("x_2", alt_tex_lbl=".34", color=GREEN),
+            NNNode("x_3", alt_tex_lbl=".2", color=BLUE)
         ).arrange(DOWN)
 
         # HIDDEN LAYER
         hidden_layer = VGroup(
-            NNNode(mathtex_lbl=r"w_1 x_1 + w_2 x_2 \\+ w_3 x_3 + b_1", label_scale=0.6),
-            NNNode(mathtex_lbl=r"w_4 x_1 + w_5 x_2 \\+ w_6 x_3 + b_2", label_scale=0.6),
-            NNNode(mathtex_lbl=r"w_7 x_1 + w_8 x_2 \\+ w_9 x_3 + b_3", label_scale=0.6)
+            NNNode(mathtex_lbl=r"w_1 x_1 +\\ w_2 x_2 +\\ w_3 x_3 +\\ b_1",
+                   alt_tex_lbl=r"w_1 1.0 +\\ w_2 .34 +\\ w_3 .2 +\\ b_1",
+                   label_scale=0.6),
+            NNNode(mathtex_lbl=r"w_4 x_1 +\\ w_5 x_2 +\\ w_6 x_3 +\\ b_2", label_scale=0.6),
+            NNNode(mathtex_lbl=r"w_7 x_1 +\\ w_8 x_2 +\\ w_9 x_3 +\\ b_3", label_scale=0.6)
         ).arrange(DOWN)
 
         # OUTPUT LAYER
@@ -97,7 +121,7 @@ class NeuralNetworkScene(MovingCameraScene):
             NNNode(mathtex_lbl=output_label_text, label_scale=.25)
         ).arrange(DOWN)
 
-        ## PACKAGE ENTIRE NEURAL NETWORK AND ADD
+        # PACKAGE ENTIRE NEURAL NETWORK AND ADD
         nn_layers = VGroup(input_layer, hidden_layer, output_layer) \
             .arrange(RIGHT, buff=2) \
             .to_edge(LEFT)
@@ -141,17 +165,20 @@ class NeuralNetworkScene(MovingCameraScene):
         self.add(*[mobj for i,mobj in enumerate(b_hidden_latex[0]) if i not in range(10,16)])
 
         # remove the node labels containing expressions in hidden layer
-        self.remove(*[node.label for node in output_layer],
-                    *[node.label for node in hidden_layer]
+        self.remove(*[node.mathtex_lbl for node in output_layer],
+                    *[node.mathtex_lbl for node in hidden_layer]
                     )
 
         #self.add(b_hidden_latex, index_labels(b_hidden_latex[0], color=RED))
         self.wait()
 
+        # =====================================================================================================
+        self.next_section("Start cycling through weights and biases", skip_animations=skip_flag)
+
         # start cycling through weights on input-hidden
         for i,grp in enumerate(input_to_hidden["groups"]):
             self.play(*[FadeIn(mobj) for mobj in [grp,
-                     hidden_layer[i].label,
+                     hidden_layer[i].mathtex_lbl,
                      *[mobj for j,mobj in enumerate(w_hidden_latex[0]) if j in range(6*i+10,6*i+16)],
                      *[mobj for j, mobj in enumerate(b_hidden_latex[0]) if j in range(2*i+10, 2*i+12)]
                      ]])
@@ -163,11 +190,13 @@ class NeuralNetworkScene(MovingCameraScene):
         for i,grp in enumerate(hidden_to_output["groups"]):
             self.play(*[FadeIn(mobj) for mobj in [grp,
                      *[mobj for j,mobj in enumerate(w_output_latex[0]) if j in range(3*i+9,3*i+18)],
-                     output_layer[i].label,
+                     output_layer[i].mathtex_lbl,
                      b_output_latex
                      ]])
 
             self.wait(3)
+        # =====================================================================================================
+        self.next_section("Zoom in on output node", skip_animations=skip_flag)
 
         # zoom in on output node
         self.camera.frame.save_state()
@@ -178,7 +207,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait(3)
 
         # show light and dark font thresholds
-        lbl = output_layer[0].label
+        lbl = output_layer[0].mathtex_lbl
         new_lbl1 = MathTex(r"y", r"<", r"0.5").move_to(output_layer[0])
         new_lbl2 = MathTex(r"y", r"\geq", r"0.5").move_to(output_layer[0])
 
@@ -196,23 +225,24 @@ class NeuralNetworkScene(MovingCameraScene):
                   )
         self.wait()
 
-        # zoom back out, show all arrows
+        # =====================================================================================================
+        # zoom back out, show all arrows and the activation functions
+        self.next_section("Zoom back out, show activation functions", skip_animations=skip_flag)
+
         self.play(
             Restore(self.camera.frame),
-            # FadeIn(w_hidden_latex,b_hidden_latex, w_output_latex, b_output_latex),
             FadeOut(hidden_to_output["labels"]),
             FadeIn(input_to_hidden["arrows"])
         )
         self.wait()
 
-        # Show activation functions
         # ReLU
-        relu_ax = Axes(x_range=[-1,3,1], y_range=[-1,3,1])
+        relu_ax = Axes(x_range=[-1,3,1], y_range=[-1,3,1],x_length=4,y_length=4)
         relu_plot = relu_ax.plot(lambda x: x if x>0 else 0, color=YELLOW)
-        relu_label = Text("ReLU", color=RED).scale(5).next_to(relu_ax, DOWN)
+        relu_label = Text("ReLU", color=RED).scale(4).next_to(relu_ax, DOWN)
 
         relu = VDict({"ax": relu_ax, "plot": relu_plot, "label" : relu_label}) \
-            .scale(.10) \
+            .scale(.2) \
             .next_to(hidden_layer, RIGHT,aligned_edge=UP, buff=0.5)
 
         relu_rect = DashedVMobject(
@@ -223,12 +253,12 @@ class NeuralNetworkScene(MovingCameraScene):
             num_dashes=50
         )
         # sigmoid
-        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, 1])
+        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, 1],x_length=4,y_length=4)
         sigmoid_plot = sigmoid_ax.plot(lambda x: 1 / (1 + np.exp(-x)), color=YELLOW)
         sigmoid_label = Text("Sigmoid", color=RED).scale(5).next_to(sigmoid_ax, DOWN)
 
         sigmoid = VDict({"ax": sigmoid_ax, "plot": sigmoid_plot, "label": sigmoid_label}) \
-            .scale(.10) \
+            .scale(.2) \
             .next_to(output_layer, RIGHT, aligned_edge=UP, buff=0.5)
 
         sigmoid_rect = DashedVMobject(
@@ -239,6 +269,185 @@ class NeuralNetworkScene(MovingCameraScene):
             num_dashes=25
         )
         self.play(FadeIn(relu), FadeIn(relu_rect), FadeIn(sigmoid), FadeIn(sigmoid_rect))
+        self.wait()
+
+        # =====================================================================================================
+        self.next_section("Shift camera to the right, zoom out slightly", skip_animations=skip_flag)
+
+        self.play(
+            self.camera.frame.animate.move_to(nn_layers).scale(1.2)
+        )
+        self.wait()
+        # =====================================================================================================
+        self.next_section("Create and process salmon pink input", skip_animations=skip_flag)
+
+        salmon_tex = VGroup(Tex("Light"), Tex("Salmon")).arrange(DOWN) \
+            .next_to(nn_layers, LEFT, buff=1)
+
+        salmon_box = Rectangle(color="#FFC5B9",
+                                  fill_opacity=1.0,
+                                  width=salmon_tex.width * 1.5,
+                                  height=salmon_tex.height * 2
+                                  ).move_to(salmon_tex)
+
+        input_box = VGroup(salmon_box, salmon_tex)
+        self.play(FadeIn(input_box))
+        self.wait()
+
+        # declare the salmon color rgb values
+        salmon_rgb = VGroup(MathTex("255",color=RED),
+                            MathTex("197",color=GREEN),
+                            MathTex("185",color=BLUE)
+                            )
+
+        # align them to input nodes
+        for mobj, node in zip(salmon_rgb, input_layer):
+            mobj.move_to(node).shift(LEFT*2)
+
+        self.play(ReplacementTransform(input_box, salmon_rgb))
+        self.wait()
+
+        # present division operation
+        salmon_rgb_div = VGroup(MathTex(r"\frac{255}{255}",color=RED),
+                            MathTex(r"\frac{197}{255}",color=GREEN),
+                            MathTex(r"\frac{185}{255}",color=BLUE)
+                            )
+
+        for mobj1,mobj2 in zip(salmon_rgb, salmon_rgb_div):
+            mobj2.move_to(mobj1)
+
+        self.play(
+            # fade in the denominators
+            *[FadeIn(mobj) for mobj in
+              (salmon_rgb_div[0][0][3:7], salmon_rgb_div[1][0][3:7], salmon_rgb_div[2][0][3:7])
+              ],
+            # move rgb values to numerators
+            *[FadeTransform(mobj1,mobj2) for mobj1,mobj2 in zip(salmon_rgb,
+                (salmon_rgb_div[0][0][:3], salmon_rgb_div[1][0][:3], salmon_rgb_div[2][0][:3])
+            )]
+        )
+        self.wait()
+
+        # show result of scaling division
+        salmon_rgb_final = VGroup(MathTex(r"\frac{255}{255}", "=", r"1.0", color=RED),
+                            MathTex(r"\frac{197}{255}", "=", r".77",color=GREEN),
+                            MathTex(r"\frac{185}{255}", "=", r".72",color=BLUE)
+                            )
+
+        for mobj1,mobj2 in zip(salmon_rgb_div,salmon_rgb_final):
+            mobj2.move_to(mobj1, aligned_edge=RIGHT)
+
+        # scoot the fractions over and show equality side
+        self.play(*[FadeTransform(mobj1, mobj2[0]) for mobj1, mobj2 in zip(salmon_rgb_div, salmon_rgb_final)],
+                  *[FadeIn(mobj[1:]) for mobj in salmon_rgb_final]
+                  )
+
+        self.wait()
+
+        # move the scaled values into the input nodes
+        self.play(*[
+            ReplacementTransform(rgb_tex[2], node.alt_tex_lbl) for rgb_tex, node in zip(salmon_rgb_final, input_layer)
+        ],
+                  *[FadeOut(node.mathtex_lbl) for node in input_layer],
+                  *[FadeOut(mobj[:2]) for mobj in salmon_rgb_final]
+                  )
+
+        self.wait()
+
+        # =====================================================================================================
+        self.next_section("Propagate inputs through the hidden layer", skip_animations=False)
+
+        # fade out all connections except for first hidden node's
+        # and zoom in on the input and hidden layers
+        self.play(
+            *[FadeOut(c) for c in input_to_hidden["groups"][1:]],
+            *[FadeOut(c) for c in hidden_to_output["groups"]]
+        )
+        self.wait()
+        self.play(
+            self.camera.frame.animate.set(height=VGroup(input_layer, hidden_layer).height * 1.2) \
+                .move_to(VGroup(input_layer, hidden_layer))
+        )
+        # "skate" the values along the arrows
+
+        skate_alpha = ValueTracker(.154)
+        """
+        alpha_display = DecimalNumber(skate_alpha.get_value(), num_decimal_places=3) \
+            .to_edge(DOWN)
+        self.add(alpha_display)
+
+        alpha_display.add_updater(lambda mobj: mobj.set_value(skate_alpha.get_value()))
+        """
+
+        h1_labels = VGroup(*[node.alt_tex_lbl.copy() \
+                         .set_color(node.color) \
+                         .add_background_rectangle(BLACK, opacity=.8)
+                         .rotate(arrow.get_angle())
+                         .add_updater(lambda mobj, arrow=arrow:
+                             mobj.move_to(arrow.point_from_proportion(skate_alpha.get_value()))
+                         )
+
+                     for arrow,node in zip(input_to_hidden["arrows"], input_layer)
+                     ])
+
+
+        self.play(FadeIn(h1_labels))
+        self.wait()
+
+        # skate the labels by updating the alpha
+        # also color the x variables
+        self.play(skate_alpha.animate.set_value(1),
+                  *[mobj.animate.set_color(c)
+                    for n in hidden_layer
+                    for mobj,c in
+                    zip([n.mathtex_lbl[0][2:4], n.mathtex_lbl[0][7:9], n.mathtex_lbl[0][12:14]],
+                        (RED,GREEN,BLUE))
+                    ],
+                  run_time=3)
+        self.wait()
+
+        #  remove the updaters
+        for mobj in h1_labels:
+            mobj.clear_updaters()
+
+        # force update the equations in hidden layer
+        for n in hidden_layer:
+            n.alt_tex_lbl.move_to(n.circle)
+
+        self.play(
+            # Swap out the hidden node equations with partially substituted ones
+            *[FadeTransform(hidden_layer[0].mathtex_lbl, hidden_layer[0].alt_tex_lbl)],
+
+            # "jump" the labels into the hidden nodes
+            *[ReplacementTransform(t,n)
+                for t,n in
+                zip(
+                    h1_labels,
+                    (hidden_layer[0].alt_tex_lbl[0][2:5].set_color(RED),
+                     hidden_layer[0].alt_tex_lbl[0][8:11].set_color(GREEN),
+                     hidden_layer[0].alt_tex_lbl[0][14:16].set_color(BLUE))
+                )
+            ]
+        )
+        self.wait()
+
+        # =====================================================================================================
+        # move camera to the right
+        self.next_section("Zoom into ReLU", skip_animations=skip_flag)
+
+        # zoom into ReLU
+        INITIAL_FRAME_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
+        INITIAL_FRAME_WIDTH = config.frame_width
+
+        def updater_camera(mobj):
+            proportion = self.camera.frame.width / INITIAL_FRAME_WIDTH
+            self.camera.cairo_line_width_multiple = INITIAL_FRAME_WIDTH_MULTIPLE * proportion
+
+        relu.add_updater(updater_camera)
+
+        self.play(
+            self.camera.frame.animate.set(height=relu["ax"].height * 1.2).move_to(relu["ax"])
+        )
         self.wait()
 
 if __name__ == "__main__":

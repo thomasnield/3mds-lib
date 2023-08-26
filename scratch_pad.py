@@ -3,7 +3,7 @@ from manim import *
 from threemds.utils import render_scenes
 
 
-class CircleTest(Scene):
+class CircleTraceTest(Scene):
     def construct(self):
         circle = Circle(radius=2)
         self.add(circle)
@@ -27,6 +27,6 @@ class CircleTest(Scene):
 
 
 if __name__ == "__main__":
-    render_scenes(q='l', scene_names=['CircleTest'])
+    render_scenes(q='h', scene_names=['CircleTraceTest'])
 
 
