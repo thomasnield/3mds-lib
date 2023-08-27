@@ -105,10 +105,14 @@ class NeuralNetworkScene(MovingCameraScene):
         # HIDDEN LAYER
         hidden_layer = VGroup(
             NNNode(mathtex_lbl=r"w_1 x_1 +\\ w_2 x_2 +\\ w_3 x_3 +\\ b_1",
-                   alt_tex_lbl=r"w_1 1.0 +\\ w_2 .34 +\\ w_3 .2 +\\ b_1",
+                   alt_tex_lbl=r"w_1 (1.0) +\\ w_2 (.34) +\\ w_3 (.2) +\\ b_1",
                    label_scale=0.6),
-            NNNode(mathtex_lbl=r"w_4 x_1 +\\ w_5 x_2 +\\ w_6 x_3 +\\ b_2", label_scale=0.6),
-            NNNode(mathtex_lbl=r"w_7 x_1 +\\ w_8 x_2 +\\ w_9 x_3 +\\ b_3", label_scale=0.6)
+            NNNode(mathtex_lbl=r"w_4 x_1 +\\ w_5 x_2 +\\ w_6 x_3 +\\ b_2",
+                   alt_tex_lbl=r"w_4 (1.0) +\\ w_5 (.34) +\\ w_6 (.2) +\\ b_1",
+                   label_scale=0.6),
+            NNNode(mathtex_lbl=r"w_7 x_1 +\\ w_8 x_2 +\\ w_9 x_3 +\\ b_3",
+                   alt_tex_lbl=r"w_7 (1.0) +\\ w_8 (.34) +\\ w_9 (.2) +\\ b_1",
+                   label_scale=0.6)
         ).arrange(DOWN)
 
         # OUTPUT LAYER
@@ -371,15 +375,9 @@ class NeuralNetworkScene(MovingCameraScene):
         # "skate" the values along the arrows
 
         skate_alpha = ValueTracker(.154)
-        """
-        alpha_display = DecimalNumber(skate_alpha.get_value(), num_decimal_places=3) \
-            .to_edge(DOWN)
-        self.add(alpha_display)
 
-        alpha_display.add_updater(lambda mobj: mobj.set_value(skate_alpha.get_value()))
-        """
 
-        h1_labels = VGroup(*[node.alt_tex_lbl.copy() \
+        h_labels = VGroup(*[node.alt_tex_lbl.copy() \
                          .set_color(node.color) \
                          .add_background_rectangle(BLACK, opacity=.8)
                          .rotate(arrow.get_angle())
@@ -391,7 +389,7 @@ class NeuralNetworkScene(MovingCameraScene):
                      ])
 
 
-        self.play(FadeIn(h1_labels))
+        self.play(FadeIn(h_labels))
         self.wait()
 
         # skate the labels by updating the alpha
@@ -407,7 +405,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
         #  remove the updaters
-        for mobj in h1_labels:
+        for mobj in h_labels:
             mobj.clear_updaters()
 
         # force update the equations in hidden layer
@@ -416,20 +414,27 @@ class NeuralNetworkScene(MovingCameraScene):
 
         self.play(
             # Swap out the hidden node equations with partially substituted ones
-            *[FadeTransform(hidden_layer[0].mathtex_lbl, hidden_layer[0].alt_tex_lbl)],
+            *[FadeTransform(
+                VGroup(*[t for i,t in enumerate(hidden_layer[0].mathtex_lbl[0]) if i not in (2,3,7,8,12,13)]),
+                VGroup(*[t for i,t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i not in (3,4,5,11,12,13,19,20)]),
+            )],
+            *[FadeOut(t) for i,t in enumerate(hidden_layer[0].mathtex_lbl[0]) if i in (2,3,7,8,12,13)],
 
             # "jump" the labels into the hidden nodes
-            *[ReplacementTransform(t,n)
+            *[FadeTransform(t,n)
                 for t,n in
                 zip(
-                    h1_labels,
-                    (hidden_layer[0].alt_tex_lbl[0][2:5].set_color(RED),
-                     hidden_layer[0].alt_tex_lbl[0][8:11].set_color(GREEN),
-                     hidden_layer[0].alt_tex_lbl[0][14:16].set_color(BLUE))
+                    h_labels,
+                    (
+                        VGroup(*[t for i,t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i in (3,4,5)]).set_color(RED),
+                        VGroup(*[t for i, t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i in (11,12,13)]).set_color(GREEN),
+                        VGroup(*[t for i, t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i in (19,20)]).set_color(BLUE)
+                    )
                 )
             ]
         )
         self.wait()
+
 
         # =====================================================================================================
         # move camera to the right
