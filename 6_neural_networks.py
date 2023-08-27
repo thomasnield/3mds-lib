@@ -62,7 +62,6 @@ class NeuralNetworkScene(MovingCameraScene):
                        next_layer: list[NNNode],
                        start_index=0):
 
-
         i = start_index
         layer_grp = VDict()
         layer_grp["groups"] = VGroup()
@@ -123,7 +122,7 @@ class NeuralNetworkScene(MovingCameraScene):
                    label_scale=0.6),
 
             NNNode(mathtex_lbl=HiddenNodeTex("w_7", "x_1",    r"+\\", "w_8", "x_2",   r"+\\", "w_9", "x_3",  r"+\\", "b_3"),
-                   alt_tex_lbl=HiddenNodeTex("w_7", r"(1.0)", r"+\\", "w_8", r"(.34)" r"+\\", "w_9", r"(.2)" r"+\\", "b_1"),
+                   alt_tex_lbl=HiddenNodeTex("w_7", r"(1.0)", r"+\\", "w_8", r"(.34)", r"+\\", "w_9", r"(.2)", r"+\\", "b_1"),
                    label_scale=0.6)
         ).arrange(DOWN)
 
@@ -358,7 +357,7 @@ class NeuralNetworkScene(MovingCameraScene):
         # fade out all connections except for first hidden node's
         # and zoom in on the input and hidden layers
         self.play(
-            *[FadeOut(c) for c in input_to_hidden["groups"][1:]],
+            *[FadeOut(c) for c in input_to_hidden["groups"]],
             *[FadeOut(c) for c in hidden_to_output["groups"]]
         )
         self.wait()
@@ -368,66 +367,69 @@ class NeuralNetworkScene(MovingCameraScene):
         )
         # "skate" the values along the arrows
 
-        skate_alpha = ValueTracker(.154)
+        for i in range(0,3):
+            self.play(*[FadeIn(g.arrow) for g in input_to_hidden["groups"][i]])
+            skate_alpha = ValueTracker(.154)
 
 
-        h_labels = VGroup(*[node.alt_tex_lbl.copy() \
-                         .set_color(node.color) \
-                         .add_background_rectangle(BLACK, opacity=.8)
-                         .rotate(arrow.get_angle())
-                         .add_updater(lambda mobj, arrow=arrow:
-                             mobj.move_to(arrow.point_from_proportion(skate_alpha.get_value()))
-                         )
+            h_labels = VGroup(*[input_node.alt_tex_lbl.copy() \
+                             .set_color(input_node.color) \
+                             .add_background_rectangle(BLACK, opacity=.8)
+                             .rotate(arrow.get_angle())
+                             .add_updater(lambda mobj, arrow=arrow:
+                                 mobj.move_to(arrow.point_from_proportion(skate_alpha.get_value()))
+                             )
 
-                     for arrow,node in zip(input_to_hidden["arrows"], input_layer)
-                     ])
+                         for arrow,input_node in zip([g.arrow for g in input_to_hidden["groups"][i]], input_layer)
+                         ])
 
 
-        self.play(FadeIn(h_labels))
-        self.wait()
+            self.play(FadeIn(h_labels))
+            self.wait()
 
-        # skate the labels by updating the alpha
-        # also color the x variables
-        self.play(skate_alpha.animate.set_value(1),
-                  *[t.animate.set_color(c)
-                    for n in hidden_layer
-                    for t,c in
-                    zip(n.mathtex_lbl.x_texs, (RED,GREEN,BLUE))
-                    ],
-                  run_time=3)
-        self.wait()
+            # skate the labels by updating the alpha
+            # also color the x variables
+            self.play(skate_alpha.animate.set_value(1),
+                      *[t.animate.set_color(c)
+                        for t,c in
+                        zip(hidden_layer[i].mathtex_lbl.x_texs, (RED,GREEN,BLUE))
+                        ],
+                      run_time=3)
+            self.wait()
 
-        #  remove the updaters
-        for mobj in h_labels:
-            mobj.clear_updaters()
+            #  remove the updaters
+            for mobj in h_labels:
+                mobj.clear_updaters()
 
-        # force update the equations in hidden layer
-        for n in hidden_layer:
-            n.alt_tex_lbl.move_to(n.circle)
+            # force update the equations in hidden layer
+            for n in hidden_layer:
+                n.alt_tex_lbl.move_to(n.circle)
 
-        self.play(
-            # Swap out the hidden node equations with partially substituted ones
-            FadeTransform(
-                hidden_layer[0].mathtex_lbl.all_but_x,
-                hidden_layer[0].alt_tex_lbl.all_but_x
-            ),
-        )
-        self.wait()
-        self.play(
-            FadeOut(hidden_layer[0].mathtex_lbl.x_texs),
-        )
-        self.wait()
-        self.play(
-            # "jump" the labels into the hidden nodes
-            *[FadeTransform(t,n)
-                for t,n in
-                zip(
-                    h_labels,
-                    [t.set_color(c) for t,c in zip(hidden_layer[0].alt_tex_lbl.x_texs, (RED,GREEN,BLUE))]
-                )
-            ]
-        )
-        self.wait()
+            self.play(
+                # Swap out the hidden node equations with partially substituted ones
+                FadeTransform(
+                    hidden_layer[i].mathtex_lbl.all_but_x,
+                    hidden_layer[i].alt_tex_lbl.all_but_x
+                ),
+            )
+            self.wait()
+            self.play(
+                FadeOut(hidden_layer[i].mathtex_lbl.x_texs),
+            )
+            self.wait()
+            self.play(
+                # "jump" the labels into the hidden nodes
+                *[FadeTransform(t,n)
+                    for t,n in
+                    zip(
+                        h_labels,
+                        [t.set_color(c) for t,c in zip(hidden_layer[i].alt_tex_lbl.x_texs, (RED,GREEN,BLUE))]
+                    )
+                ]
+            )
+            self.wait()
+            self.play(*[FadeOut(g.arrow) for g in input_to_hidden["groups"][i]])
+            self.wait()
 
 
         # =====================================================================================================
