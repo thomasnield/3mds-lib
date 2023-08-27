@@ -8,22 +8,22 @@ from threemds.utils import render_scenes
 
 
 class NNNode(VGroup):
-    def __init__(self, mathtex_lbl="",
-                 alt_tex_lbl="",
-                 alt2_tex_lbl="",
+    def __init__(self, mathtex_lbl=MathTex(""),
+                 alt_tex_lbl=MathTex(""),
+                 alt2_tex_lbl=MathTex(""),
                  label_scale=None,
                  color=WHITE):
         super().__init__()
         self.color=color
         self.circle = Circle(color=color, fill_opacity=1 if color!=WHITE else 0)
 
-        self.alt_tex_lbl = MathTex(alt_tex_lbl)
+        self.alt_tex_lbl = alt_tex_lbl
         self.alt_tex_lbl.add_updater(lambda t: t.move_to(self.circle))
 
-        self.alt2_tex_lbl = MathTex(alt2_tex_lbl)
+        self.alt2_tex_lbl = alt2_tex_lbl
         self.alt2_tex_lbl.add_updater(lambda t: t.move_to(self.circle))
 
-        self.mathtex_lbl = MathTex(mathtex_lbl)
+        self.mathtex_lbl = mathtex_lbl
 
         if label_scale:
             self.mathtex_lbl.scale(label_scale)
@@ -97,29 +97,41 @@ class NeuralNetworkScene(MovingCameraScene):
 
         # INPUT LAYER
         input_layer = VGroup(
-            NNNode("x_1", alt_tex_lbl="1.0", color=RED),
-            NNNode("x_2", alt_tex_lbl=".34", color=GREEN),
-            NNNode("x_3", alt_tex_lbl=".2", color=BLUE)
+            NNNode(MathTex("x_1"), alt_tex_lbl=MathTex("1.0"), color=RED),
+            NNNode(MathTex("x_2"), alt_tex_lbl=MathTex(".34"), color=GREEN),
+            NNNode(MathTex("x_3"), alt_tex_lbl=MathTex(".2"), color=BLUE)
         ).arrange(DOWN)
+
+        class HiddenNodeTex(MathTex):
+            def __init__(self, *tex_strings, **kwargs):
+                super().__init__(*tex_strings, **kwargs)
+
+                self.w_texs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i in (0, 3, 6)])
+                self.b_texs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i == 9])
+                self.x_texs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i in (1,4,7)])
+                self.plus_signs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i in (2,5,8)])
+                self.all_but_x = VGroup(*self.w_texs, *self.b_texs, *self.plus_signs)
 
         # HIDDEN LAYER
         hidden_layer = VGroup(
-            NNNode(mathtex_lbl=r"w_1 x_1 +\\ w_2 x_2 +\\ w_3 x_3 +\\ b_1",
-                   alt_tex_lbl=r"w_1 (1.0) +\\ w_2 (.34) +\\ w_3 (.2) +\\ b_1",
+            NNNode(mathtex_lbl=HiddenNodeTex("w_1", "x_1",     r"+\\", "w_2", "x_2",    r"+\\", "w_3", "x_3",  r"+\\",  "b_1"),
+                   alt_tex_lbl=HiddenNodeTex("w_1", r"(1.0)", r"+\\",  "w_2", r"(.34)", r"+\\", "w_3", r"(.2)", r"+\\", "b_1"),
                    label_scale=0.6),
-            NNNode(mathtex_lbl=r"w_4 x_1 +\\ w_5 x_2 +\\ w_6 x_3 +\\ b_2",
-                   alt_tex_lbl=r"w_4 (1.0) +\\ w_5 (.34) +\\ w_6 (.2) +\\ b_1",
+
+            NNNode(mathtex_lbl=HiddenNodeTex("w_4", "x_1",     r"+\\", "w_5", "x_2",    r"+\\", "w_6", "x_3",   r"+\\", "b_2"),
+                   alt_tex_lbl=HiddenNodeTex(r"w_4", r"(1.0)", r"+\\", "w_5", r"(.34)", r"+\\", "w_6", r"(.2)", r"+\\", "b_1"),
                    label_scale=0.6),
-            NNNode(mathtex_lbl=r"w_7 x_1 +\\ w_8 x_2 +\\ w_9 x_3 +\\ b_3",
-                   alt_tex_lbl=r"w_7 (1.0) +\\ w_8 (.34) +\\ w_9 (.2) +\\ b_1",
+
+            NNNode(mathtex_lbl=HiddenNodeTex("w_7", "x_1",    r"+\\", "w_8", "x_2",   r"+\\", "w_9", "x_3",  r"+\\", "b_3"),
+                   alt_tex_lbl=HiddenNodeTex("w_7", r"(1.0)", r"+\\", "w_8", r"(.34)" r"+\\", "w_9", r"(.2)" r"+\\", "b_1"),
                    label_scale=0.6)
         ).arrange(DOWN)
 
         # OUTPUT LAYER
-        output_label_text = r"w_{10}(w_1 x_1 + w_2 x_2 + w_3 x_3 + b_1) \\ " \
-                            r"+ w_{11}(w_4 x_1 + w_5 x_2 + w_6 x_3 + b_2) \\" \
-                            r"+ w_{12}(w_7 x_1 + w_8 x_2 + w_9 x_3 + b_3) \\" \
-                            r"+ b_4"
+        output_label_text = MathTex(r"w_{10}(w_1 x_1 + w_2 x_2 + w_3 x_3 + b_1) \\ "
+                                    r"+ w_{11}(w_4 x_1 + w_5 x_2 + w_6 x_3 + b_2) \\"
+                                    r"+ w_{12}(w_7 x_1 + w_8 x_2 + w_9 x_3 + b_3) \\"
+                                    r"+ b_4")
 
         output_layer = VGroup(
             NNNode(mathtex_lbl=output_label_text, label_scale=.25)
@@ -142,38 +154,11 @@ class NeuralNetworkScene(MovingCameraScene):
         # CONNECT HIDDEN TO OUTPUT
         hidden_to_output = self.connect_layers(hidden_layer, output_layer, 9)
 
-        # DECLARE WEIGHT AND BIAS MATRICES
-        w_hidden_latex = MathTex(r"W_{hidden} = \begin{bmatrix} w_1 & w_2 & w_3\\"
-                                 r"w_4 & w_5 & w_6 \\"
-                                 r" w_7 & w_8 & w_9 "
-                                 r"\end{bmatrix}") \
-                            .scale(.75) \
-                            .to_edge(UR)
-
-        b_hidden_latex = MathTex(r"B_{hidden} = \begin{bmatrix} b_1 \\ b_2 \\ b_3 \end{bmatrix}") \
-                            .scale(.75) \
-                            .next_to(w_hidden_latex, DOWN) \
-                            .to_edge(RIGHT)
-
-        b_output_latex = MathTex(r"B_{output} = \begin{bmatrix} b_4 \end{bmatrix}") \
-                            .scale(.75) \
-                            .to_edge(DR)
-
-        w_output_latex = MathTex(r"W_{output} = \begin{bmatrix} w_{10} & w_{11} & w_{12} \end{bmatrix}") \
-                            .scale(.75) \
-                            .next_to(b_output_latex, UP) \
-                            .to_edge(RIGHT)
-
-        # add only brackets and variable name for W_hidden
-        self.add(*[mobj for i,mobj in enumerate(w_hidden_latex[0]) if i not in range(10,28)])
-        self.add(*[mobj for i,mobj in enumerate(b_hidden_latex[0]) if i not in range(10,16)])
-
         # remove the node labels containing expressions in hidden layer
         self.remove(*[node.mathtex_lbl for node in output_layer],
                     *[node.mathtex_lbl for node in hidden_layer]
                     )
 
-        #self.add(b_hidden_latex, index_labels(b_hidden_latex[0], color=RED))
         self.wait()
 
         # =====================================================================================================
@@ -183,19 +168,14 @@ class NeuralNetworkScene(MovingCameraScene):
         for i,grp in enumerate(input_to_hidden["groups"]):
             self.play(*[FadeIn(mobj) for mobj in [grp,
                      hidden_layer[i].mathtex_lbl,
-                     *[mobj for j,mobj in enumerate(w_hidden_latex[0]) if j in range(6*i+10,6*i+16)],
-                     *[mobj for j, mobj in enumerate(b_hidden_latex[0]) if j in range(2*i+10, 2*i+12)]
                      ]])
             self.wait(3)
             self.play(FadeOut(grp))
 
         # start cycling through weights on hidden-output
-        self.add(*[mobj for i,mobj in enumerate(w_output_latex[0]) if i not in range(9,18)])
         for i,grp in enumerate(hidden_to_output["groups"]):
             self.play(*[FadeIn(mobj) for mobj in [grp,
-                     *[mobj for j,mobj in enumerate(w_output_latex[0]) if j in range(3*i+9,3*i+18)],
                      output_layer[i].mathtex_lbl,
-                     b_output_latex
                      ]])
 
             self.wait(3)
@@ -205,7 +185,6 @@ class NeuralNetworkScene(MovingCameraScene):
         # zoom in on output node
         self.camera.frame.save_state()
         self.play(
-            FadeOut(w_hidden_latex,b_hidden_latex, w_output_latex, b_output_latex),
             self.camera.frame.animate.scale(.5).move_to(output_layer[0])
         )
         self.wait(3)
@@ -311,10 +290,17 @@ class NeuralNetworkScene(MovingCameraScene):
         self.play(ReplacementTransform(input_box, salmon_rgb))
         self.wait()
 
+        class FractionTex(MathTex):
+            def __init__(self, *tex_strings, **kwargs):
+                super().__init__(*tex_strings, **kwargs)
+
+                self.denominator = VGroup(*[t for i,t in enumerate(self[0]) if i in (3,4,5,6)])
+                self.numerator = VGroup(*[t for i,t in enumerate(self[0]) if i in (0,1,2)])
+
         # present division operation
-        salmon_rgb_div = VGroup(MathTex(r"\frac{255}{255}",color=RED),
-                            MathTex(r"\frac{197}{255}",color=GREEN),
-                            MathTex(r"\frac{185}{255}",color=BLUE)
+        salmon_rgb_div = VGroup(FractionTex(r"\frac{255}{255}",color=RED),
+                            FractionTex(r"\frac{197}{255}",color=GREEN),
+                            FractionTex(r"\frac{185}{255}",color=BLUE)
                             )
 
         for mobj1,mobj2 in zip(salmon_rgb, salmon_rgb_div):
@@ -322,39 +308,47 @@ class NeuralNetworkScene(MovingCameraScene):
 
         self.play(
             # fade in the denominators
-            *[FadeIn(mobj) for mobj in
-              (salmon_rgb_div[0][0][3:7], salmon_rgb_div[1][0][3:7], salmon_rgb_div[2][0][3:7])
-              ],
+            *[FadeIn(t.denominator) for t in salmon_rgb_div],
             # move rgb values to numerators
-            *[FadeTransform(mobj1,mobj2) for mobj1,mobj2 in zip(salmon_rgb,
-                (salmon_rgb_div[0][0][:3], salmon_rgb_div[1][0][:3], salmon_rgb_div[2][0][:3])
-            )]
+            *[FadeTransform(t1, t2.numerator) for t1,t2 in zip(salmon_rgb, salmon_rgb_div)]
         )
         self.wait()
 
+        class FractionTexEqual(MathTex):
+            def __init__(self, *tex_strings, **kwargs):
+                super().__init__(*tex_strings, **kwargs)
+                self.denominator = VGroup(*[t for i,t in enumerate(self[0]) if i in (3,4,5,6)])
+                self.numerator = VGroup(*[t for i,t in enumerate(self[0]) if i in (0,1,2)])
+                self.fraction = self[0]
+                self.equals_sign = self[1]
+                self.right_side = self[2]
+                self.equals_and_right_side = self[1:]
+                self.equals_and_left_side = self[:-1]
+
         # show result of scaling division
-        salmon_rgb_final = VGroup(MathTex(r"\frac{255}{255}", "=", r"1.0", color=RED),
-                            MathTex(r"\frac{197}{255}", "=", r".77",color=GREEN),
-                            MathTex(r"\frac{185}{255}", "=", r".72",color=BLUE)
+        salmon_rgb_final = VGroup(FractionTexEqual(r"\frac{255}{255}", "=", r"1.0", color=RED),
+                            FractionTexEqual(r"\frac{197}{255}", "=", r".77",color=GREEN),
+                            FractionTexEqual(r"\frac{185}{255}", "=", r".72",color=BLUE)
                             )
 
         for mobj1,mobj2 in zip(salmon_rgb_div,salmon_rgb_final):
             mobj2.move_to(mobj1, aligned_edge=RIGHT)
 
         # scoot the fractions over and show equality side
-        self.play(*[FadeTransform(mobj1, mobj2[0]) for mobj1, mobj2 in zip(salmon_rgb_div, salmon_rgb_final)],
-                  *[FadeIn(mobj[1:]) for mobj in salmon_rgb_final]
+        self.play(*[FadeTransform(t1, t2.fraction) for t1, t2 in zip(salmon_rgb_div, salmon_rgb_final)],
+                  *[FadeIn(t.equals_and_right_side) for t in salmon_rgb_final]
                   )
 
         self.wait()
 
         # move the scaled values into the input nodes
         self.play(*[
-            ReplacementTransform(rgb_tex[2], node.alt_tex_lbl) for rgb_tex, node in zip(salmon_rgb_final, input_layer)
+            FadeTransform(rgb_tex.right_side, node.alt_tex_lbl)
+            for rgb_tex, node in zip(salmon_rgb_final, input_layer)
         ],
-                  *[FadeOut(node.mathtex_lbl) for node in input_layer],
-                  *[FadeOut(mobj[:2]) for mobj in salmon_rgb_final]
-                  )
+          *[FadeOut(node.mathtex_lbl) for node in input_layer],
+          *[FadeOut(t.equals_and_left_side) for t in salmon_rgb_final]
+        )
 
         self.wait()
 
@@ -395,11 +389,10 @@ class NeuralNetworkScene(MovingCameraScene):
         # skate the labels by updating the alpha
         # also color the x variables
         self.play(skate_alpha.animate.set_value(1),
-                  *[mobj.animate.set_color(c)
+                  *[t.animate.set_color(c)
                     for n in hidden_layer
-                    for mobj,c in
-                    zip([n.mathtex_lbl[0][2:4], n.mathtex_lbl[0][7:9], n.mathtex_lbl[0][12:14]],
-                        (RED,GREEN,BLUE))
+                    for t,c in
+                    zip(n.mathtex_lbl.x_texs, (RED,GREEN,BLUE))
                     ],
                   run_time=3)
         self.wait()
@@ -414,22 +407,23 @@ class NeuralNetworkScene(MovingCameraScene):
 
         self.play(
             # Swap out the hidden node equations with partially substituted ones
-            *[FadeTransform(
-                VGroup(*[t for i,t in enumerate(hidden_layer[0].mathtex_lbl[0]) if i not in (2,3,7,8,12,13)]),
-                VGroup(*[t for i,t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i not in (3,4,5,11,12,13,19,20)]),
-            )],
-            *[FadeOut(t) for i,t in enumerate(hidden_layer[0].mathtex_lbl[0]) if i in (2,3,7,8,12,13)],
-
+            FadeTransform(
+                hidden_layer[0].mathtex_lbl.all_but_x,
+                hidden_layer[0].alt_tex_lbl.all_but_x
+            ),
+        )
+        self.wait()
+        self.play(
+            FadeOut(hidden_layer[0].mathtex_lbl.x_texs),
+        )
+        self.wait()
+        self.play(
             # "jump" the labels into the hidden nodes
             *[FadeTransform(t,n)
                 for t,n in
                 zip(
                     h_labels,
-                    (
-                        VGroup(*[t for i,t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i in (3,4,5)]).set_color(RED),
-                        VGroup(*[t for i, t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i in (11,12,13)]).set_color(GREEN),
-                        VGroup(*[t for i, t in enumerate(hidden_layer[0].alt_tex_lbl[0]) if i in (19,20)]).set_color(BLUE)
-                    )
+                    [t.set_color(c) for t,c in zip(hidden_layer[0].alt_tex_lbl.x_texs, (RED,GREEN,BLUE))]
                 )
             ]
         )
