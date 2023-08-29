@@ -1,6 +1,6 @@
 from manim import *
 
-from threemds.utils import render_scenes
+from threemds.utils import render_scenes, mobj_to_svg
 import urllib.request
 
 class LogoScene(Scene):
@@ -48,12 +48,15 @@ class LogoScene(Scene):
 
         # create steam functions
         steam_functions = []
+        steam_waves = VGroup()
         for i in range(3):
             steam_function = get_sine_wave() \
                 .rotate(PI / 2.0) \
                 .scale(.2) \
                 .next_to(cup, UP) \
                 .shift([i * .5, 0, 0])
+
+            steam_waves.add(steam_function)
 
             d_theta = ValueTracker(0)
 
@@ -73,7 +76,9 @@ class LogoScene(Scene):
 
             self.play(Create(steam_function), run_time=.3)
 
-        self.play(Write(Text("3-Minute Data Science").scale(.8).shift(DOWN * 1.5)), run_time=.5)
+        text = Text("3-Minute Data Science").scale(.8).shift(DOWN * 1.5)
+        self.play(Write(text), run_time=.5)
+        mobj_to_svg(VGroup(cup, steam_waves, sine_function), 'logo.svg', h_padding=1)
         self.play(*(d.animate.increment_value(4 * PI) for d in steam_functions), run_time=8, rate_func=linear)
         self.wait()
 
@@ -115,4 +120,4 @@ class ClosingCard(Scene):
 # execute all scene renders
 if __name__ == "__main__":
     #render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
-    render_scenes(q="k", scene_names=["LogoScene"], last_scene=True)
+    render_scenes(q="h", scene_names=["LogoScene"], last_scene=True)

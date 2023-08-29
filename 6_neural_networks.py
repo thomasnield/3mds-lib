@@ -109,7 +109,7 @@ class NeuralNetworkScene(MovingCameraScene):
         return layer_grp
 
     def construct(self):
-        skip_flag = True
+        skip_flag = False
         # =====================================================================================================
         self.next_section("Declare and initialize", skip_animations=skip_flag)
 
@@ -125,31 +125,33 @@ class NeuralNetworkScene(MovingCameraScene):
                 super().__init__(*tex_strings, **kwargs)
 
                 self.w_texs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i in (0, 3, 6)])
-                self.b_texs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i == 9])
+                self.b_tex = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i == 9])
                 self.x_texs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i in (1,4,7)])
                 self.plus_signs = VGroup(*[self[i] for i,t in enumerate(tex_strings) if i in (2,5,8)])
-                self.all_but_x = VGroup(*self.w_texs, *self.b_texs, *self.plus_signs)
-                self.all_but_w = VGroup(*self.x_texs, *self.b_texs, *self.plus_signs)
+                self.all_but_x = VGroup(*self.w_texs, *self.b_tex, *self.plus_signs)
+                self.all_but_w = VGroup(*self.x_texs, *self.b_tex, *self.plus_signs)
 
         # HIDDEN LAYER
         hidden_layer = VGroup(
             NNNode(mathtex_lbl=HiddenNodeTex("w_1", "x_1",     r"+\\", "w_2", "x_2",    r"+\\", "w_3", "x_3",  r"+\\",  "b_1"),
                    alt_tex_lbl=HiddenNodeTex("w_1", r"(1.0)", r"+\\",  "w_2", r"(.34)", r"+\\", "w_3", r"(.2)", r"+\\", "b_1"),
-                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[0,0],2)})", r"(1.0)", r"+\\", f"({round(w_hidden[0,1],2)})",  r"(.34)", r"+\\", f"({round(w_hidden[0,2],2)})",  r"+\\", "b_1"),
+                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[0,0],2)})", r"(1.0)", r"+\\",
+                                              f"({round(w_hidden[0,1],2)})",  r"(.34)", r"+\\",
+                                              f"({round(w_hidden[0,2],2)})", r"(.2)", r"+\\", "b_1"),
                    label_scale=0.6),
 
             NNNode(mathtex_lbl=HiddenNodeTex("w_4", "x_1",     r"+\\", "w_5", "x_2",    r"+\\", "w_6", "x_3",   r"+\\", "b_2"),
-                   alt_tex_lbl=HiddenNodeTex(r"w_4", r"(1.0)", r"+\\", "w_5", r"(.34)", r"+\\", "w_6", r"(.2)", r"+\\", "b_1"),
+                   alt_tex_lbl=HiddenNodeTex(r"w_4", r"(1.0)", r"+\\", "w_5", r"(.34)", r"+\\", "w_6", r"(.2)", r"+\\", "b_2"),
                    alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[1,0],2)})", r"(1.0)", r"+\\",
                                               f"({round(w_hidden[1,1],2)})",  r"(.34)", r"+\\",
-                                              f"({round(w_hidden[1,2],2)})",  r"+\\", "b_1"),
+                                              f"({round(w_hidden[1,2],2)})",r"(.2)",  r"+\\", "b_2"),
                    label_scale=0.6),
 
             NNNode(mathtex_lbl=HiddenNodeTex("w_7", "x_1",    r"+\\", "w_8", "x_2",   r"+\\", "w_9", "x_3",  r"+\\", "b_3"),
-                   alt_tex_lbl=HiddenNodeTex("w_7", r"(1.0)", r"+\\", "w_8", r"(.34)", r"+\\", "w_9", r"(.2)", r"+\\", "b_1"),
+                   alt_tex_lbl=HiddenNodeTex("w_7", r"(1.0)", r"+\\", "w_8", r"(.34)", r"+\\", "w_9", r"(.2)", r"+\\", "b_3"),
                    alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[2, 0], 2)})", r"(1.0)", r"+\\",
                                               f"({round(w_hidden[2, 1], 2)})", r"(.34)", r"+\\",
-                                              f"({round(w_hidden[2, 2], 2)})", r"+\\", "b_1"),
+                                              f"({round(w_hidden[2, 2], 2)})", r"(.2)", r"+\\", "b_3"),
                    label_scale=0.6)
         ).arrange(DOWN)
 
@@ -245,7 +247,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
         # ReLU
-        relu_ax = Axes(x_range=[-1,3,1], y_range=[-1,3,1],x_length=4,y_length=4)
+        relu_ax = Axes(x_range=[-5,15,1], y_range=[-1,19,1],x_length=4,y_length=4, tips=False)
         relu_plot = relu_ax.plot(lambda x: x if x>0 else 0, color=YELLOW)
         relu_label = Text("ReLU", color=RED).scale(4).next_to(relu_ax, DOWN)
 
@@ -261,7 +263,7 @@ class NeuralNetworkScene(MovingCameraScene):
             num_dashes=50
         )
         # sigmoid
-        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, 1],x_length=4,y_length=4)
+        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, 1],x_length=4,y_length=4, tips=False)
         sigmoid_plot = sigmoid_ax.plot(lambda x: 1 / (1 + np.exp(-x)), color=YELLOW)
         sigmoid_label = Text("Sigmoid", color=RED).scale(5).next_to(sigmoid_ax, DOWN)
 
@@ -472,39 +474,96 @@ class NeuralNetworkScene(MovingCameraScene):
             self.play(FadeIn(w_hidden_texs))
             self.wait()
 
-            # move weights to each node
+            # move weight latex labels to each node
+            # by transitioning from alt_tex_lbl to alt2_tex_lbl
             i_hidden_node.alt2_tex_lbl.scale(.8).move_to(i_hidden_node)
 
+            # color x-values in alt2_tex_lbl
+            for x_val,c in zip(i_hidden_node.alt2_tex_lbl.x_texs, [RED,GREEN,BLUE]):
+                x_val.set_color(c)
+
             self.play(
-                FadeOut(i_hidden_node.alt_tex_lbl.all_but_w),
-                *[
-                    FadeTransform(w_hidden_tex[-1], w_node_tex)
-                    for w_hidden_tex, w_node_tex in zip(w_hidden_texs, i_hidden_node.alt2_tex_lbl.w_texs)
-                ]
+                FadeTransform(i_hidden_node.alt_tex_lbl.all_but_w, i_hidden_node.alt2_tex_lbl.all_but_w),
+                FadeTransform(VGroup(*[t[-1] for t in w_hidden_texs]), i_hidden_node.alt2_tex_lbl.w_texs),
+                FadeOut(i_hidden_node.alt_tex_lbl.w_texs),
+                FadeOut(VGroup(*[t[:-1] for t in w_hidden_texs]))
             )
+
+            # replace the bias with is value
+            self.wait()
+            bias_tex = MathTex(round(b_hidden[i,0],2)) \
+                .scale(.6 * .8) \
+                .move_to(i_hidden_node.alt2_tex_lbl.b_tex, aligned_edge=RIGHT)
+
+            self.play(
+                Circumscribe(i_hidden_node.alt2_tex_lbl.b_tex),
+                FadeTransform(i_hidden_node.alt2_tex_lbl.b_tex, bias_tex)
+            )
+            self.wait()
 
             # fade out arrows and move onto next hidden node
             self.play(*[FadeOut(arrow) for arrow in i_arrows])
             self.wait()
 
-        # =====================================================================================================
-        # move camera to the right
-        self.next_section("Zoom into ReLU", skip_animations=skip_flag)
+            # solve the node
+            solve_expr = (w_hidden[i] @ (np.array([255,197,1845]).T / 255) + b_hidden[i]).flatten()[0]
+            node_solved_tex = MathTex(round(solve_expr, 3)).move_to(i_hidden_node)
 
-        # zoom into ReLU
-        INITIAL_FRAME_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
-        INITIAL_FRAME_WIDTH = config.frame_width
+            self.play(FadeTransform(VGroup(i_hidden_node.alt2_tex_lbl[:-1], bias_tex), node_solved_tex))
+            self.wait()
 
-        def updater_camera(mobj):
-            proportion = self.camera.frame.width / INITIAL_FRAME_WIDTH
-            self.camera.cairo_line_width_multiple = INITIAL_FRAME_WIDTH_MULTIPLE * proportion
+            # jump to ReLU to trace the value
 
-        relu.add_updater(updater_camera)
+            # change line width behavior on camera zoom
+            INITIAL_FRAME_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
+            INITIAL_FRAME_WIDTH = config.frame_width
 
-        self.play(
-            self.camera.frame.animate.set(height=relu["ax"].height * 1.2).move_to(relu["ax"])
-        )
+            def updater_camera(mobj):
+                proportion = self.camera.frame.width / INITIAL_FRAME_WIDTH
+                self.camera.cairo_line_width_multiple = INITIAL_FRAME_WIDTH_MULTIPLE * proportion
+
+            relu.add_updater(updater_camera)
+            self.camera.frame.save_state()
+
+            x_lookup_dot = Dot(relu_ax.c2p(solve_expr, 0), color=YELLOW).scale(.2)
+            y_lookup_dot = Dot(relu_ax.c2p(0, solve_expr), color=YELLOW).scale(.2)
+            lookup_dot = Dot(relu_ax.c2p(solve_expr, solve_expr), color=YELLOW).scale(.2)
+
+            x_lookup_line = DashedLine(color=YELLOW, start=x_lookup_dot, end=lookup_dot)
+            y_lookup_line = DashedLine(color=YELLOW, start=lookup_dot, end=y_lookup_dot)
+
+            self.play(
+                FadeOut(relu_label),
+                LaggedStart(
+                    node_solved_tex.animate.scale(.15).next_to(x_lookup_dot, DOWN, buff=.05),
+                    self.camera.frame.animate.set(height=relu_ax.height * 1.3).move_to(relu_ax),
+                    FadeIn(x_lookup_dot),
+                    lag_ratio=.3
+                ),
+                run_time=3
+            )
+
+            relu_output_tex = node_solved_tex.copy().next_to(y_lookup_dot, LEFT, buff=.05)
+
+            self.wait()
+            self.play(Write(x_lookup_line))
+            self.play(Write(lookup_dot))
+            self.play(Write(y_lookup_line))
+            self.play(Write(y_lookup_dot), Write(relu_output_tex))
+            self.wait()
+
+            self.play(LaggedStart(relu_output_tex.animate.scale(20/3).move_to(i_hidden_node),
+                                  Restore(self.camera.frame),
+                                  FadeIn(relu_label),
+                                  FadeOut(VGroup(lookup_dot, x_lookup_line, x_lookup_dot, y_lookup_line, y_lookup_dot, node_solved_tex)),
+                                  lag_ratio=.1))
+            self.wait()
+            relu.clear_updaters()
+
+        # restore all arrows in hidden layer
+        self.play(FadeIn(input_to_hidden["arrows"]))
         self.wait()
 
+
 if __name__ == "__main__":
-    render_scenes(q='l', scene_names=['NeuralNetworkScene'])
+    render_scenes(q='k', scene_names=['NeuralNetworkScene'])
