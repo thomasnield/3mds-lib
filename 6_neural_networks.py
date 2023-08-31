@@ -114,7 +114,7 @@ class NeuralNetworkScene(MovingCameraScene):
         return layer_grp
 
     def construct(self):
-        skip_flag = True
+        skip_flag = False
         # =====================================================================================================
         self.next_section("Declare and initialize", skip_animations=skip_flag)
 
@@ -641,4 +641,4 @@ class NeuralNetworkScene(MovingCameraScene):
         self.next_section("Propagate output node, trace incoming values", skip_animations=False)
 
 if __name__ == "__main__":
-    render_scenes(q='l', play=True, scene_names=['NeuralNetworkScene'])
+    render_scenes(q='k', play=True, scene_names=['NeuralNetworkScene'])
