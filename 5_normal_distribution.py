@@ -845,5 +845,5 @@ class TiledScene(MovingCameraScene):
 
 # execute all scene renders
 if __name__ == "__main__":
-    render_scenes(q="l", gif=True, scene_names=["PDFScene"])
+    render_scenes(q="m", gif=True, scene_names=["PDFScene"])
     # render_scenes(q="k")

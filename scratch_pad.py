@@ -1,23 +1,33 @@
-import numpy as np
+from manim import *
+import os
 
-w_hidden = np.array([
-    [3.55748018, 8.48639024, 1.59453643],
-    [4.2898201,  8.35518251, 1.36713926],
-    [3.72074292, 8.13223257, 1.48165939]
-])
+class MovingCameraLineWidthTest(MovingCameraScene):
 
-w_output = np.array([
-    [4.27394194, 3.65634072, 2.63047526]
-])
+    def construct(self):
+        line = Line(start=[-1,1,0], end=[1,-1,0])
 
-b_hidden = np.array([
-    [-6.67311751],
-    [-6.34084123],
-    [-6.10933577]
-])
+        self.add(line)
 
-b_output = np.array([
-    [-5.46880991]
-])
+        INITIAL_LINE_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
+        INITIAL_FRAME_WIDTH = config.frame_width
 
-print(w_hidden[1,:])
+        def line_scale_down_updater(mobj):
+            proportion = self.camera.frame.width / INITIAL_FRAME_WIDTH
+            self.camera.cairo_line_width_multiple = INITIAL_LINE_WIDTH_MULTIPLE * proportion
+
+        mobj = Mobject()
+        mobj.add_updater(line_scale_down_updater)
+        self.add(mobj)
+
+        self.camera.frame.save_state()
+        self.play(
+            self.camera.frame.animate.move_to(line.get_center()).scale(.1)
+        )
+        self.wait()
+        self.play(Restore(self.camera.frame))
+        self.wait()
+
+
+# Execute rendering
+if __name__ == "__main__":
+    os.system( r"manim -ql -v WARNING -p --disable_caching -o MovingCameraLineWidthTest.mp4 scratch_pad.py MovingCameraLineWidthTest")

@@ -75,7 +75,7 @@ class TexRender(Scene):
         a,b,x = sp.symbols('a b x')
         exp_f = sp.Equality(a**x, b).subs(a,2).subs(b,8)
 
-        tex = MathTex(r"\text{log}_ex = \text{ln}(x)")
+        tex = MathTex(r"\lim_{h\to0} \frac{f(x+h) -f(x)}{h}")
         mobj_to_svg(tex, 'out.svg')
 
 class SimplePlot(Scene):
@@ -177,35 +177,90 @@ class EulersNumberPlot(Scene):
 
 class MovingSecantScene(Scene):
     def construct(self):
-        x_tracker = ValueTracker(2)
+        x = Variable(2, num_decimal_places=2, label=r"\Delta x").scale(0.75)
 
         f = lambda x: x**2
-        dx = lambda x: 2*x
 
         x_range, y_range = (-3,3,1), (-1,9,1)
         ax = Axes(x_range,y_range)
-        plot = ax.plot(f, color=CLASSPERT_ORANGE)
+        plot = ax.plot(f, color=ORANGE)
         tangent = always_redraw(lambda:
-                                ax.get_secant_slope_group(x_tracker.get_value(), plot)[2].set_color(YELLOW)
-                                )
+            ax.get_secant_slope_group(x.tracker.get_value(), plot)[2].set_color(YELLOW)
+        )
 
-        label = always_redraw(lambda:
-                              MathTex(r"\delta x =", round(x_tracker.get_value(),2)) \
-                                .next_to(tangent.get_center(), UP)
-                              )
-        self.add(ax,plot,tangent, label)
+        def x_updater(mobj):
+            mobj.move_to(tangent.copy().set_length(2).rotate(90*DEGREES).get_end())
+
+        x.add_updater(x_updater, call_updater=True)
+        self.add(ax,plot,tangent, x)
 
         # animate
         self.play(
-            x_tracker.animate.set_value(-3),
-            run_time=4
+            x.tracker.animate.set_value(-3),
+            run_time=6
         )
         self.play(
-            x_tracker.animate.set_value(3),
-            run_time=4
+            x.tracker.animate.set_value(3),
+            run_time=6
         )
 
+
+class ClosingSecantLine(Scene):
+    def construct(self):
+        x = Variable(1, num_decimal_places=2, label=r"x").scale(0.75)
+
+        dx = Variable(1, num_decimal_places=2, label=r"dx") \
+            .scale(0.75)
+
+        f = lambda x: x ** 2
+
+        dy_dx = Variable(2, num_decimal_places=2, label=r"\frac{\Delta y}{\Delta x}") \
+            .scale(0.75) \
+            .add_updater(lambda mobj: mobj.tracker.set_value((f(x.tracker.get_value() + dx.tracker.get_value()) - f(x.tracker.get_value()))/(dx.tracker.get_value())))
+
+        x_range, y_range = (-3, 3, 1), (-1, 9, 1)
+        ax = Axes(x_range, y_range)
+        plot = ax.plot(f, color=ORANGE)
+        tangent = always_redraw(lambda:
+                                ax.get_secant_slope_group(x=x.tracker.get_value(),
+                                                          dx=dx.tracker.get_value(),
+                                                          graph=plot,
+                                                          dx_line_color=BLUE,
+                                                          dy_line_color=BLUE,
+                                                          secant_line_color=YELLOW,
+                                                          secant_line_length=20)
+                                )
+
+        x_dot = Dot(color=BLUE).add_updater(lambda mobj: mobj.move_to(ax.c2p(x.tracker.get_value(),f(x.tracker.get_value()))),
+                                            call_updater=True)
+
+        x1_dot = Dot(color=BLUE).add_updater(lambda mobj: mobj.move_to(ax.c2p(x.tracker.get_value() + dx.tracker.get_value(),f(x.tracker.get_value() + dx.tracker.get_value()))),
+                                            call_updater=True)
+
+        dy_dx.add_updater(lambda mobj: mobj.move_to(tangent[2].copy() \
+                                                    .set_length(2) \
+                                                    .rotate(90 * DEGREES).get_end()
+                                                    ),
+                          call_updater=True)
+
+        self.add(ax, plot, tangent, dy_dx, x_dot, x1_dot)
+
+        # animate
+        self.play(
+            dx.tracker.animate.set_value(.001),
+            run_time=6
+        )
+        self.wait()
+        self.play(
+            x.tracker.animate.set_value(-2),
+            run_time=6
+        )
+        self.play(
+            x.tracker.animate.set_value(2),
+            run_time=6
+        )
+        self.wait()
 
 
 if __name__ == "__main__":
-    render_scenes(q="h", scene_names=['MovingSecantScene'])
+    render_scenes(q="l", scene_names=['TexRender'])

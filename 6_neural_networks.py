@@ -2,7 +2,6 @@ import math
 
 from manim import *
 import numpy as np
-import sympy as sp
 
 from threemds.utils import render_scenes
 
@@ -54,6 +53,12 @@ class NNNode(VGroup):
         self.alt2_tex_lbl.move_to(self.circle)
 
         self.add(self.circle, self.mathtex_lbl)
+
+    def color_x(self):
+        for lbl in (self.mathtex_lbl, self.alt_tex_lbl, self.alt2_tex_lbl):
+            for x_tex, c in zip(lbl.x_texs, (RED,GREEN,BLUE)):
+                x_tex.set_color(c)
+
 
 
 class NNConnection(VGroup):
@@ -109,13 +114,13 @@ class NeuralNetworkScene(MovingCameraScene):
         return layer_grp
 
     def construct(self):
-        skip_flag = False
+        skip_flag = True
         # =====================================================================================================
         self.next_section("Declare and initialize", skip_animations=skip_flag)
 
         # INPUT LAYER
         input_layer = VGroup(
-            NNNode(MathTex("x_1"), alt_tex_lbl=MathTex("1.0"), color=RED),
+            NNNode(MathTex("x_1"), alt_tex_lbl =MathTex("1.0"), color=RED),
             NNNode(MathTex("x_2"), alt_tex_lbl=MathTex(".34"), color=GREEN),
             NNNode(MathTex("x_3"), alt_tex_lbl=MathTex(".2"), color=BLUE)
         ).arrange(DOWN)
@@ -155,6 +160,11 @@ class NeuralNetworkScene(MovingCameraScene):
                    label_scale=0.6)
         ).arrange(DOWN)
 
+
+        # color-code x1, x2, and x3
+        for hidden_node in hidden_layer:
+            hidden_node.color_x()
+
         # OUTPUT LAYER
         output_label_text = MathTex(r"w_{10}(w_1 x_1 + w_2 x_2 + w_3 x_3 + b_1) \\ "
                                     r"+ w_{11}(w_4 x_1 + w_5 x_2 + w_6 x_3 + b_2) \\"
@@ -170,6 +180,7 @@ class NeuralNetworkScene(MovingCameraScene):
             .arrange(RIGHT, buff=2)
 
         self.add(nn_layers)
+
 
         # CONNECT INPUT TO HIDDEN
         input_to_hidden = self.connect_layers(
@@ -196,8 +207,9 @@ class NeuralNetworkScene(MovingCameraScene):
             self.play(*[FadeIn(mobj) for mobj in [grp,
                      hidden_layer[i].mathtex_lbl,
                      ]])
-            self.wait(3)
+            self.wait(1)
             self.play(FadeOut(grp))
+            self.wait(1)
 
         # start cycling through weights on hidden-output
         for i,grp in enumerate(hidden_to_output["groups"]):
@@ -218,23 +230,42 @@ class NeuralNetworkScene(MovingCameraScene):
 
         # show light and dark font thresholds
         lbl = output_layer[0].mathtex_lbl
+        lbl_copy = lbl.copy()
+        lbl.save_state()
+
         new_lbl1 = MathTex(r"y", r"<", r"0.5").move_to(output_layer[0])
         new_lbl2 = MathTex(r"y", r"\geq", r"0.5").move_to(output_layer[0])
 
         light_label = Text("LIGHT", color=WHITE) \
+            .add_background_rectangle(color="#FFC5B9") \
             .next_to(output_layer[0], DOWN)
 
-        dark_label = Text("DARK") \
+        dark_label = Text("DARK", color=BLACK) \
+            .add_background_rectangle(color="#FFC5B9") \
             .next_to(output_layer[0], DOWN)
 
         self.play(FadeIn(light_label), ReplacementTransform(lbl, new_lbl1))
         self.wait()
 
-        self.play(light_label.animate.become(dark_label),
-                  ReplacementTransform(new_lbl1[1], new_lbl2[1])
-                  )
-        self.wait()
+        self.play(Rotate(new_lbl1[1], 180*DEGREES), FadeTransform(light_label, dark_label))
+        self.play(new_lbl1[1].animate.move_to(new_lbl2[1], aligned_edge=UP))
 
+        self.play(*[TransformMatchingShapes(t1[i],t2[i]) for t1,t2,i in zip(new_lbl1, new_lbl2, range(0,3)) if i != 1],
+                  FadeIn(new_lbl2[1])
+                  )
+        self.remove(new_lbl1[1])
+
+        self.wait()
+        self.play(
+            FadeOut(dark_label),
+            FadeOut(new_lbl1[1]),
+            FadeOut(new_lbl1[2]),
+            FadeOut(new_lbl2),
+            FadeIn(lbl_copy)
+        )
+        self.add(lbl.restore())
+        self.remove(lbl_copy)
+        self.wait()
         # =====================================================================================================
         # zoom back out, show all arrows and the activation functions
         self.next_section("Zoom back out, show activation functions", skip_animations=skip_flag)
@@ -247,7 +278,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
         # ReLU
-        relu_ax = Axes(x_range=[-5,15,1], y_range=[-1,19,1],x_length=4,y_length=4, tips=False)
+        relu_ax = Axes(x_range=[-7,15,1], y_range=[-1,15,1],x_length=5,y_length=4, tips=False)
         relu_plot = relu_ax.plot(lambda x: x if x>0 else 0, color=YELLOW)
         relu_label = Text("ReLU", color=RED).scale(4).next_to(relu_ax, DOWN)
 
@@ -262,8 +293,9 @@ class NeuralNetworkScene(MovingCameraScene):
                       fill_opacity=0).move_to(hidden_layer),
             num_dashes=50
         )
+
         # sigmoid
-        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, 1],x_length=4,y_length=4, tips=False)
+        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, 1],x_length=5,y_length=4, tips=False)
         sigmoid_plot = sigmoid_ax.plot(lambda x: 1 / (1 + np.exp(-x)), color=YELLOW)
         sigmoid_label = Text("Sigmoid", color=RED).scale(5).next_to(sigmoid_ax, DOWN)
 
@@ -278,18 +310,24 @@ class NeuralNetworkScene(MovingCameraScene):
                       fill_opacity=0).move_to(output_layer),
             num_dashes=25
         )
-        self.play(FadeIn(relu), FadeIn(relu_rect), FadeIn(sigmoid), FadeIn(sigmoid_rect))
+        self.play(
+            self.camera.frame.animate.move_to(VGroup(nn_layers, relu, sigmoid)).scale(1.05),
+            FadeIn(relu),
+            FadeIn(relu_rect),
+            FadeIn(sigmoid),
+            FadeIn(sigmoid_rect))
         self.wait()
 
-        # =====================================================================================================
-        self.next_section("Shift camera to the right, zoom out slightly", skip_animations=skip_flag)
+        self.camera.frame.save_state()
+
+        # ======================================================================================================
+        self.next_section("Create and process salmon pink input", skip_animations=skip_flag)
 
         self.play(
-            self.camera.frame.animate.move_to(nn_layers).scale(1.2)
+            self.camera.frame.animate.set(height=VGroup(input_layer, hidden_layer).height * 1.2) \
+                .move_to(VGroup(input_layer, hidden_layer))
         )
         self.wait()
-        # =====================================================================================================
-        self.next_section("Create and process salmon pink input", skip_animations=skip_flag)
 
         salmon_tex = VGroup(Tex("Light"), Tex("Salmon")).arrange(DOWN) \
             .next_to(nn_layers, LEFT, buff=1)
@@ -378,25 +416,23 @@ class NeuralNetworkScene(MovingCameraScene):
             for rgb_tex, node in zip(salmon_rgb_final, input_layer)
         ],
           *[FadeOut(node.mathtex_lbl) for node in input_layer],
-          *[FadeOut(t.equals_and_left_side) for t in salmon_rgb_final]
+          *[FadeOut(t.equals_and_left_side) for t in salmon_rgb_final],
+          Restore(self.camera.frame)
         )
 
         self.wait()
 
         # =====================================================================================================
-        self.next_section("Propagate inputs and weights through the hidden layer", skip_animations=False)
+        self.next_section("Propagate inputs and weights through the hidden layer", skip_animations=skip_flag)
 
         # fade out all connections except for first hidden node's
         # and zoom in on the input and hidden layers
         self.play(
-            *[FadeOut(c) for c in input_to_hidden["groups"]],
-            *[FadeOut(c) for c in hidden_to_output["groups"]]
+            *[FadeOut(c) for c in input_to_hidden["arrows"]],
+            *[FadeOut(c) for c in hidden_to_output["arrows"]]
         )
         self.wait()
-        self.play(
-            self.camera.frame.animate.set(height=VGroup(input_layer, hidden_layer).height * 1.2) \
-                .move_to(VGroup(input_layer, hidden_layer))
-        )
+
         # "skate" the values along the arrows
         for i in range(0,3):
             i_arrows: list[Arrow] = [g.arrow for g in input_to_hidden["groups"][i]]
@@ -423,10 +459,6 @@ class NeuralNetworkScene(MovingCameraScene):
             # skate the labels by updating the alpha
             # also color the x variables
             self.play(skate_alpha.animate.set_value(1),
-                      *[t.animate.set_color(c)
-                        for t,c in
-                        zip(i_hidden_node.mathtex_lbl.x_texs, (RED,GREEN,BLUE))
-                        ],
                       run_time=3)
             self.wait()
 
@@ -439,7 +471,7 @@ class NeuralNetworkScene(MovingCameraScene):
 
             self.play(
                 # Swap out the hidden node equations with partially substituted ones
-                FadeTransform(
+                FadeTransformPieces(
                     i_hidden_node.mathtex_lbl.all_but_x,
                     i_hidden_node.alt_tex_lbl.all_but_x
                 ),
@@ -451,36 +483,36 @@ class NeuralNetworkScene(MovingCameraScene):
             self.wait()
             self.play(
                 # "jump" the labels into the hidden nodes
-                *[FadeTransform(t,n)
-                    for t,n in
-                    zip(
-                        h_labels,
-                        [t.set_color(c) for t,c in zip(i_hidden_node.alt_tex_lbl.x_texs, (RED,GREEN,BLUE))]
-                    )
-                ]
+                FadeTransformPieces(h_labels, i_hidden_node.alt_tex_lbl.x_texs)
             )
             self.wait()
 
+
             # fade in weights on edges
+            w_labels =  VGroup(*[mobj.label.copy() for mobj in input_to_hidden["groups"][i]])
+
+            self.play(FadeIn(w_labels))
+            self.wait()
+
+            # slide over to reveal weight values
             w_hidden_texs =  VGroup(*[
                 MathTex(f"w_{i * 3 + j + 1}", "=", round(w_value, 2)) \
                     .scale(.6) \
                     .next_to(arrow.get_midpoint(), UP * .5) \
                     .rotate(arrow.get_angle(), about_point=arrow.get_midpoint())
 
-                for w_value, arrow, j in zip(w_hidden[i, :], i_arrows, range(0, 3))
+                for w_value, arrow, j in zip(w_hidden[i], i_arrows, range(0, 3))
             ])
 
-            self.play(FadeIn(w_hidden_texs))
+            self.play(
+                TransformMatchingShapes(w_labels, VGroup(*[t[0] for t in w_hidden_texs])),
+                FadeIn(VGroup(*[t[1:] for t in w_hidden_texs]))
+            )
             self.wait()
 
             # move weight latex labels to each node
             # by transitioning from alt_tex_lbl to alt2_tex_lbl
             i_hidden_node.alt2_tex_lbl.scale(.8).move_to(i_hidden_node)
-
-            # color x-values in alt2_tex_lbl
-            for x_val,c in zip(i_hidden_node.alt2_tex_lbl.x_texs, [RED,GREEN,BLUE]):
-                x_val.set_color(c)
 
             self.play(
                 FadeTransform(i_hidden_node.alt_tex_lbl.all_but_w, i_hidden_node.alt2_tex_lbl.all_but_w),
@@ -507,24 +539,28 @@ class NeuralNetworkScene(MovingCameraScene):
 
             # solve the node
             solve_expr = (w_hidden[i] @ (np.array([255,197,1845]).T / 255) + b_hidden[i]).flatten()[0]
+
             node_solved_tex = MathTex(round(solve_expr, 3)).move_to(i_hidden_node)
 
-            self.play(FadeTransform(VGroup(i_hidden_node.alt2_tex_lbl[:-1], bias_tex), node_solved_tex))
+            self.play(ReplacementTransform(VGroup(i_hidden_node.alt2_tex_lbl[:-1], bias_tex), node_solved_tex))
             self.wait()
 
             # jump to ReLU to trace the value
-
-            # change line width behavior on camera zoom
-            INITIAL_FRAME_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
-            INITIAL_FRAME_WIDTH = config.frame_width
-
-            def updater_camera(mobj):
-                proportion = self.camera.frame.width / INITIAL_FRAME_WIDTH
-                self.camera.cairo_line_width_multiple = INITIAL_FRAME_WIDTH_MULTIPLE * proportion
-
-            relu.add_updater(updater_camera)
             self.camera.frame.save_state()
 
+            # change line width behavior on camera zoom`
+            INITIAL_LINE_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
+            INITIAL_FRAME_WIDTH = config.frame_width
+
+            def line_scale_down_updater(mobj):
+                proportion = self.camera.frame.width / INITIAL_FRAME_WIDTH
+                self.camera.cairo_line_width_multiple = INITIAL_LINE_WIDTH_MULTIPLE * proportion
+
+            mobj = Mobject()
+            mobj.add_updater(line_scale_down_updater)
+            self.add(mobj)
+
+            # create objects for RelU graph
             x_lookup_dot = Dot(relu_ax.c2p(solve_expr, 0), color=YELLOW).scale(.2)
             y_lookup_dot = Dot(relu_ax.c2p(0, solve_expr), color=YELLOW).scale(.2)
             lookup_dot = Dot(relu_ax.c2p(solve_expr, solve_expr), color=YELLOW).scale(.2)
@@ -532,6 +568,7 @@ class NeuralNetworkScene(MovingCameraScene):
             x_lookup_line = DashedLine(color=YELLOW, start=x_lookup_dot, end=lookup_dot)
             y_lookup_line = DashedLine(color=YELLOW, start=lookup_dot, end=y_lookup_dot)
 
+            # jump to Relu graph
             self.play(
                 FadeOut(relu_label),
                 LaggedStart(
@@ -558,12 +595,50 @@ class NeuralNetworkScene(MovingCameraScene):
                                   FadeOut(VGroup(lookup_dot, x_lookup_line, x_lookup_dot, y_lookup_line, y_lookup_dot, node_solved_tex)),
                                   lag_ratio=.1))
             self.wait()
-            relu.clear_updaters()
+            mobj.clear_updaters()
 
         # restore all arrows in hidden layer
         self.play(FadeIn(input_to_hidden["arrows"]))
         self.wait()
 
+        # ========================================================================================
+        self.next_section("Propagate output node, skate incoming values", skip_animations=False)
+        self.play(FadeIn(hidden_to_output["arrows"]))
+        self.wait()
+
+        hidden_solved = (w_hidden @ (np.array([255,197,1845]) / 255).T + b_hidden.T).flatten()
+        skate_alpha = ValueTracker(.20)
+
+        skating_labels = VGroup(*[
+            DecimalNumber(v,num_decimal_places=3).scale(.6) \
+                             .add_background_rectangle(BLACK, opacity=.8)
+                             .rotate(arrow.get_angle())
+                             .add_updater(lambda mobj, arrow=arrow:
+                                 mobj.move_to(arrow.point_from_proportion(skate_alpha.get_value())),
+                                 call_updater=True
+                             )
+            for v, arrow in zip(hidden_solved, hidden_to_output["arrows"])
+        ])
+
+        self.play(
+            FadeIn(skating_labels)
+        )
+        self.wait()
+        self.play(
+            skate_alpha.animate.set_value(.9), run_time=3
+        )
+        self.wait()
+
+        # zoom in on the output node
+        self.camera.frame.save_state()
+
+        self.play(
+            self.camera.frame.animate.move_to(VGroup(skating_labels, output_layer, sigmoid_label, sigmoid)) \
+                .set(width=VGroup(skating_labels, output_layer, sigmoid_label, sigmoid).width * 1.1)
+        )
+
+        # move the skated values into the node
+        self.next_section("Propagate output node, trace incoming values", skip_animations=False)
 
 if __name__ == "__main__":
-    render_scenes(q='k', scene_names=['NeuralNetworkScene'])
+    render_scenes(q='l', play=True, scene_names=['NeuralNetworkScene'])
