@@ -1,8 +1,8 @@
 import math
 
 from manim import *
+from manim.utils.color import hex_to_rgb
 import numpy as np
-
 from threemds.utils import render_scenes
 
 w_hidden = np.array([
@@ -24,6 +24,25 @@ b_hidden = np.array([
 b_output = np.array([
     [-5.46880991]
 ])
+
+input_color_hex="#00c56e"
+input_color = hex_to_rgb(input_color_hex)*255
+X = (input_color / 255).reshape(3,1)
+
+# Activation functions
+relu = lambda x: np.maximum(x, 0)
+logistic = lambda x: 1 / (1 + np.exp(-x))
+
+# Runs inputs through the neural network to get predicted outputs
+Z1 = w_hidden @ X + b_hidden
+A1 = relu(Z1)
+Z2 = w_output @ A1 + b_output
+A2 = logistic(Z2)
+
+print("Z1 =", Z1)
+print("A1 = ", A1)
+print("Z2 = ", Z2)
+print("A2 = ", A2)
 
 class NNNode(VGroup):
     def __init__(self, mathtex_lbl=MathTex(""),
@@ -114,7 +133,7 @@ class NeuralNetworkScene(MovingCameraScene):
         return layer_grp
 
     def construct(self):
-        skip_flag = True
+        skip_flag = False
 
         # change line width behavior on camera zoom
         INITIAL_LINE_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
@@ -133,9 +152,9 @@ class NeuralNetworkScene(MovingCameraScene):
 
         # INPUT LAYER
         input_layer = VGroup(
-            NNNode(MathTex("x_1"), alt_tex_lbl =MathTex("1.0"), color=RED),
-            NNNode(MathTex("x_2"), alt_tex_lbl=MathTex(".34"), color=GREEN),
-            NNNode(MathTex("x_3"), alt_tex_lbl=MathTex(".2"), color=BLUE)
+            NNNode(MathTex("x_1"), alt_tex_lbl =MathTex(round(X[0,0],2)), color=RED),
+            NNNode(MathTex("x_2"), alt_tex_lbl=MathTex(round(X[1,0],2)), color=GREEN),
+            NNNode(MathTex("x_3"), alt_tex_lbl=MathTex(round(X[2,0],2)), color=BLUE)
         ).arrange(DOWN)
 
         class HiddenNodeTex(MathTex):
@@ -153,24 +172,24 @@ class NeuralNetworkScene(MovingCameraScene):
         # HIDDEN LAYER
         hidden_layer = VGroup(
             NNNode(mathtex_lbl=HiddenNodeTex("w_1", "x_1",     r"+\\", "w_2", "x_2",    r"+\\", "w_3", "x_3",  r"+\\",  "b_1"),
-                   alt_tex_lbl=HiddenNodeTex("w_1", r"(1.0)", r"+\\",  "w_2", r"(.34)", r"+\\", "w_3", r"(.2)", r"+\\", "b_1"),
-                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[0,0],2)})", r"(1.0)", r"+\\",
-                                              f"({round(w_hidden[0,1],2)})",  r"(.34)", r"+\\",
-                                              f"({round(w_hidden[0,2],2)})", r"(.2)", r"+\\", "b_1"),
+                   alt_tex_lbl=HiddenNodeTex("w_1", f"({round(X[0,0],2)})", r"+\\",  "w_2", f"({round(X[1,0],2)})", r"+\\", "w_3", f"({round(X[2,0],2)})", r"+\\", "b_1"),
+                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[0,0],2)})", f"({round(X[0,0],2)})", r"+\\",
+                                              f"({round(w_hidden[0,1],2)})",  f"({round(X[1,0],2)})", r"+\\",
+                                              f"({round(w_hidden[0,2],2)})", f"({round(X[2,0],2)})", r"+\\", "b_1"),
                    label_scale=0.6),
 
             NNNode(mathtex_lbl=HiddenNodeTex("w_4", "x_1",     r"+\\", "w_5", "x_2",    r"+\\", "w_6", "x_3",   r"+\\", "b_2"),
-                   alt_tex_lbl=HiddenNodeTex(r"w_4", r"(1.0)", r"+\\", "w_5", r"(.34)", r"+\\", "w_6", r"(.2)", r"+\\", "b_2"),
-                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[1,0],2)})", r"(1.0)", r"+\\",
-                                              f"({round(w_hidden[1,1],2)})",  r"(.34)", r"+\\",
-                                              f"({round(w_hidden[1,2],2)})",r"(.2)",  r"+\\", "b_2"),
+                   alt_tex_lbl=HiddenNodeTex(r"w_4", f"({round(X[0,0],2)})", r"+\\", "w_5", f"({round(X[1,0],2)})", r"+\\", "w_6", f"({round(X[2,0],2)})", r"+\\", "b_2"),
+                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[1,0],2)})", f"({round(X[0,0],2)})", r"+\\",
+                                              f"({round(w_hidden[1,1],2)})",  f"({round(X[1,0],2)})", r"+\\",
+                                              f"({round(w_hidden[1,2],2)})", f"({round(X[2,0],2)})",  r"+\\", "b_2"),
                    label_scale=0.6),
 
             NNNode(mathtex_lbl=HiddenNodeTex("w_7", "x_1",    r"+\\", "w_8", "x_2",   r"+\\", "w_9", "x_3",  r"+\\", "b_3"),
-                   alt_tex_lbl=HiddenNodeTex("w_7", r"(1.0)", r"+\\", "w_8", r"(.34)", r"+\\", "w_9", r"(.2)", r"+\\", "b_3"),
-                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[2, 0], 2)})", r"(1.0)", r"+\\",
-                                              f"({round(w_hidden[2, 1], 2)})", r"(.34)", r"+\\",
-                                              f"({round(w_hidden[2, 2], 2)})", r"(.2)", r"+\\", "b_3"),
+                   alt_tex_lbl=HiddenNodeTex("w_7", f"({round(X[0,0],2)})", r"+\\", "w_8", f"({round(X[1,0],2)})", r"+\\", "w_9", f"({round(X[2,0],2)})", r"+\\", "b_3"),
+                   alt2_tex_lbl=HiddenNodeTex(f"({round(w_hidden[2, 0], 2)})", f"({round(X[0,0],2)})", r"+\\",
+                                              f"({round(w_hidden[2, 1], 2)})", f"({round(X[1,0],2)})", r"+\\",
+                                              f"({round(w_hidden[2, 2], 2)})", f"({round(X[2,0],2)})", r"+\\", "b_3"),
                    label_scale=0.6)
         ).arrange(DOWN)
 
@@ -201,14 +220,14 @@ class NeuralNetworkScene(MovingCameraScene):
                                     r"+\\", r"w_{12}", r"(", r"w_7 x_1 + w_8 x_2 + w_9 x_3 + b_3", r")",
                                     r"+ \\", r"b_4").scale(.25),
 
-                   alt_tex_lbl=OutputNodeTex(r"w_{10}", r"(", r"14.977", r")",
-                                       r"+\\", r"w_{11}", r"(", r"14.295", r")",
-                                       r"+\\", r"w_{12}", r"(", r"14.614", r")",
+                   alt_tex_lbl=OutputNodeTex(r"w_{10}", r"(", f"{round(A1[0,0],3)}", r")",
+                                       r"+\\", r"w_{11}", r"(", f"{round(A1[1,0],3)}", r")",
+                                       r"+\\", r"w_{12}", r"(", f"{round(A1[2,0],3)}", r")",
                                        r"+\\", r"b_4").scale(.4),
 
-                   alt2_tex_lbl=OutputNodeTex(f"({round(w_output[0,0],2)})", r"(", r"14.977", r")",
-                                        r"+\\", f"({round(w_output[0,1],2)})", r"(", r"14.295", r")",
-                                        r"+\\", f"({round(w_output[0,2],2)})", r"(", r"14.614", r")",
+                   alt2_tex_lbl=OutputNodeTex(f"({round(w_output[0,0],2)})", r"(", f"{round(A1[0,0],3)}", r")",
+                                        r"+\\", f"({round(w_output[0,1],2)})", r"(", f"{round(A1[1,0],3)}", r")",
+                                        r"+\\", f"({round(w_output[0,2],2)})", r"(", f"{round(A1[2,0],3)}", r")",
                                         r"+\\", r"b_4").scale(.4),
                    label_scale=None)
         ).arrange(DOWN)
@@ -275,11 +294,11 @@ class NeuralNetworkScene(MovingCameraScene):
         new_lbl2 = MathTex(r"y", r"\geq", r"0.5").move_to(output_layer[0])
 
         light_label = Text("LIGHT", color=WHITE) \
-            .add_background_rectangle(color="#FFC5B9") \
+            .add_background_rectangle(color=input_color_hex) \
             .next_to(output_layer[0], DOWN)
 
         dark_label = Text("DARK", color=BLACK) \
-            .add_background_rectangle(color="#FFC5B9") \
+            .add_background_rectangle(color=input_color_hex) \
             .next_to(output_layer[0], DOWN)
 
         self.play(FadeIn(light_label), ReplacementTransform(lbl, new_lbl1))
@@ -316,7 +335,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
         # ReLU
-        relu_ax = Axes(x_range=[-7,15,1], y_range=[-1,15,1],x_length=5,y_length=4, tips=False)
+        relu_ax = Axes(x_range=[-3,3,1], y_range=[-1,4,1],x_length=5,y_length=4, tips=False)
         relu_plot = relu_ax.plot(lambda x: x if x>0 else 0, color=YELLOW)
         relu_label = Text("ReLU", color=RED).scale(4).next_to(relu_ax, DOWN)
 
@@ -367,10 +386,10 @@ class NeuralNetworkScene(MovingCameraScene):
         )
         self.wait()
 
-        salmon_tex = VGroup(Tex("Light"), Tex("Salmon")).arrange(DOWN) \
+        salmon_tex = VGroup(Tex("Background"), Tex("Color")).arrange(DOWN) \
             .next_to(nn_layers, LEFT, buff=1)
 
-        salmon_box = Rectangle(color="#FFC5B9",
+        salmon_box = Rectangle(color=input_color_hex,
                                   fill_opacity=1.0,
                                   width=salmon_tex.width * 1.5,
                                   height=salmon_tex.height * 2
@@ -381,14 +400,14 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
         # declare the salmon color rgb values
-        salmon_rgb = VGroup(MathTex("255",color=RED),
-                            MathTex("197",color=GREEN),
-                            MathTex("185",color=BLUE)
+        salmon_rgb = VGroup(MathTex(input_color[0],color=RED),
+                            MathTex(input_color[1],color=GREEN),
+                            MathTex(input_color[2],color=BLUE)
                             )
 
         # align them to input nodes
         for mobj, node in zip(salmon_rgb, input_layer):
-            mobj.move_to(node).shift(LEFT*2)
+            mobj.shift(LEFT*2)
 
         self.play(ReplacementTransform(input_box, salmon_rgb))
         self.wait()
@@ -401,10 +420,7 @@ class NeuralNetworkScene(MovingCameraScene):
                 self.numerator = VGroup(*[t for i,t in enumerate(self[0]) if i in (0,1,2)])
 
         # present division operation
-        salmon_rgb_div = VGroup(FractionTex(r"\frac{255}{255}",color=RED),
-                            FractionTex(r"\frac{197}{255}",color=GREEN),
-                            FractionTex(r"\frac{185}{255}",color=BLUE)
-                            )
+        salmon_rgb_div = VGroup(*[FractionTex(r"\frac{" + str(round(v)) +  "}{255}", color=c) for v,c in zip(input_color, (RED,GREEN,BLUE))])
 
         for mobj1,mobj2 in zip(salmon_rgb, salmon_rgb_div):
             mobj2.move_to(mobj1)
@@ -429,14 +445,11 @@ class NeuralNetworkScene(MovingCameraScene):
                 self.equals_and_left_side = self[:-1]
 
         # show result of scaling division
-        salmon_rgb_final = VGroup(FractionTexEqual(r"\frac{255}{255}", "=", r"1.0", color=RED),
-                            FractionTexEqual(r"\frac{197}{255}", "=", r".77",color=GREEN),
-                            FractionTexEqual(r"\frac{185}{255}", "=", r".72",color=BLUE)
-                            )
+        salmon_rgb_final = VGroup(*[FractionTexEqual(r"\frac{" + str(round(v)) +  "}{255}", "=", round(x,2), color=c) for v,c,x in zip(input_color, (RED,GREEN,BLUE), X.flatten())])
 
         # line up the group above to the left of the input nodes
         for mobj1,mobj2 in zip(salmon_rgb_div,salmon_rgb_final):
-            mobj2.move_to(mobj1, aligned_edge=RIGHT)
+            mobj2.move_to(mobj1, aligned_edge=LEFT)
 
         # scoot the fractions over and show equality side
         self.play(*[FadeTransform(t1, t2.fraction) for t1, t2 in zip(salmon_rgb_div, salmon_rgb_final)],
@@ -480,8 +493,9 @@ class NeuralNetworkScene(MovingCameraScene):
 
             h_labels = VGroup(*[input_node.alt_tex_lbl.copy() \
                              .set_color(input_node.color) \
+                             .scale(.7) \
                              .add_background_rectangle(BLACK, opacity=.8)
-                             .rotate(arrow.get_angle())
+                             .rotate(arrow.get_angle()) \
                              .add_updater(lambda mobj, arrow=arrow:
                                  mobj.move_to(arrow.point_from_proportion(skate_alpha.get_value()))
                              )
@@ -575,7 +589,7 @@ class NeuralNetworkScene(MovingCameraScene):
             self.wait()
 
             # solve the node
-            solve_expr = (w_hidden[i] @ (np.array([255,197,1845]).T / 255) + b_hidden[i]).flatten()[0]
+            solve_expr = Z1[i][0]
 
             node_solved_tex = MathTex(round(solve_expr, 3)).move_to(i_hidden_node)
 
@@ -630,7 +644,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.play(Write(hidden_to_output["arrows"]))
         self.wait()
 
-        hidden_solved = (w_hidden @ (np.array([255,197,1845]) / 255).T + b_hidden.T).flatten()
+        hidden_solved = A1.flatten()
         skate_alpha = ValueTracker(.20)
 
         skating_labels = VGroup(*[
@@ -731,10 +745,10 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
         # show raw output in node
-        raw_output_solved = (w_output @ hidden_solved + b_output.T).flatten()[0]
+        raw_output_solved = Z2.flatten()[0]
         print(raw_output_solved)
 
-        raw_output_solved_lbl = MathTex(round(raw_output_solved, 8)) \
+        raw_output_solved_lbl = MathTex(round(raw_output_solved, 3)) \
             .move_to(output_node)
 
         self.play(ReplacementTransform(VGroup(bias_tex,output_node.alt2_tex_lbl), raw_output_solved_lbl))
@@ -745,16 +759,16 @@ class NeuralNetworkScene(MovingCameraScene):
 
 
         # create objects for RelU graph
-        x_lookup_dot = Dot(sigmoid_ax.c2p(3, 0), color=YELLOW).scale(.2)
-        y_lookup_dot = Dot(sigmoid_ax.c2p(0, sigmoid_plot.underlying_function(3)), color=YELLOW) \
+        x_lookup_dot = Dot(sigmoid_ax.c2p(Z2[0,0], 0), color=YELLOW).scale(.2)
+        y_lookup_dot = Dot(sigmoid_ax.c2p(0, sigmoid_plot.underlying_function(Z2[0,0])), color=YELLOW) \
             .scale(.2)
 
-        lookup_dot = Dot(sigmoid_ax.c2p(3, sigmoid_plot.underlying_function(3)), color=YELLOW).scale(.2)
+        lookup_dot = Dot(sigmoid_ax.c2p(Z2[0,0], sigmoid_plot.underlying_function(Z2[0,0])), color=YELLOW).scale(.2)
 
         x_lookup_line = DashedLine(color=YELLOW, start=x_lookup_dot, end=lookup_dot)
         y_lookup_line = DashedLine(color=YELLOW, start=lookup_dot, end=y_lookup_dot)
 
-        # jump to Relu graph
+        # jump to sigmoid graph
         self.play(
             FadeOut(sigmoid_label),
             LaggedStart(
@@ -766,9 +780,9 @@ class NeuralNetworkScene(MovingCameraScene):
             run_time=3
         )
 
-        sigmoid_output_tex = MathTex(sigmoid_plot.underlying_function(raw_output_solved)) \
-                                     .match_height(raw_output_solved_lbl) \
-                                     .next_to(y_lookup_dot, LEFT, buff=.05)
+        sigmoid_output_tex = DecimalNumber(sigmoid_plot.underlying_function(raw_output_solved), num_decimal_places=3) \
+                                     .next_to(y_lookup_dot, LEFT, buff=.05) \
+                                     .scale(.15)
 
         self.wait()
         self.play(Write(x_lookup_line))
@@ -777,7 +791,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.play(Write(y_lookup_dot), Write(sigmoid_output_tex))
         self.wait()
 
-        self.play(LaggedStart(sigmoid_output_tex.animate.move_to(output_node),
+        self.play(LaggedStart(sigmoid_output_tex.animate.move_to(output_node).scale(2/3) ,
                               Restore(self.camera.frame),
                               FadeIn(sigmoid_label),
                               FadeOut(VGroup(lookup_dot, x_lookup_line, x_lookup_dot, y_lookup_line, y_lookup_dot,
@@ -788,4 +802,4 @@ class NeuralNetworkScene(MovingCameraScene):
 
 
 if __name__ == "__main__":
-    render_scenes(q='k', play=True, scene_names=['NeuralNetworkScene'])
+    render_scenes(q='l', play=True, scene_names=['NeuralNetworkScene'])
