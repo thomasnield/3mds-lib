@@ -407,7 +407,7 @@ class NeuralNetworkScene(MovingCameraScene):
 
         # align them to input nodes
         for mobj, node in zip(salmon_rgb, input_layer):
-            mobj.shift(LEFT*2)
+            mobj.move_to(node).shift(LEFT*2)
 
         self.play(ReplacementTransform(input_box, salmon_rgb))
         self.wait()
@@ -791,9 +791,11 @@ class NeuralNetworkScene(MovingCameraScene):
         self.play(Write(y_lookup_dot), Write(sigmoid_output_tex))
         self.wait()
 
-        self.play(LaggedStart(sigmoid_output_tex.animate.move_to(output_node).scale(2/3) ,
+        self.play(LaggedStart(sigmoid_output_tex.animate.move_to(output_node).scale(20/3) ,
                               Restore(self.camera.frame),
                               FadeIn(sigmoid_label),
+                              FadeIn(relu),
+                              FadeIn(relu_rect),
                               FadeOut(VGroup(lookup_dot, x_lookup_line, x_lookup_dot, y_lookup_line, y_lookup_dot,
                                              raw_output_solved_lbl)),
                               lag_ratio=.1))
