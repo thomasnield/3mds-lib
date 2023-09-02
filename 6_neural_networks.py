@@ -369,7 +369,15 @@ class NeuralNetworkScene(MovingCameraScene):
         )
 
         # sigmoid
-        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, 1],x_length=5,y_length=4, tips=False)
+        sigmoid_ax = Axes(x_range=[-3, 3, 1], y_range=[-.5, 1, .25],
+                          x_length=5,
+                          y_length=4,
+                          tips=False,
+                          y_axis_config={
+                              "numbers_with_elongated_ticks" : (1,),
+                              "include_tip" : False
+                          }
+                          )
         sigmoid_plot = sigmoid_ax.plot(lambda x: 1 / (1 + np.exp(-x)), color=YELLOW)
         sigmoid_label = Text("Sigmoid", color=RED).scale(5).next_to(sigmoid_ax, DOWN)
 
@@ -495,7 +503,8 @@ class NeuralNetworkScene(MovingCameraScene):
             for rgb_tex, node in zip(salmon_rgb_final, input_layer)
         ],
           *[FadeOut(node.mathtex_lbl) for node in input_layer],
-          *[FadeOut(t.equals_and_left_side) for t in salmon_rgb_final]        )
+          *[FadeOut(t.equals_and_left_side) for t in salmon_rgb_final]
+        )
 
         self.wait()
 
