@@ -403,7 +403,7 @@ class NeuralNetworkScene(MovingCameraScene):
         )
         self.wait()
 
-        color_tex = VGroup(Tex("Background"), Tex("Color")).arrange(DOWN) \
+        color_tex = VGroup(Tex("Background"), Tex("Color"), color=BLACK).arrange(DOWN) \
             .next_to(nn_layers, LEFT, buff=1)
 
         color_box = Rectangle(color=input_color_hex,
@@ -554,10 +554,7 @@ class NeuralNetworkScene(MovingCameraScene):
                     i_hidden_node.mathtex_lbl.all_but_x,
                     i_hidden_node.alt_tex_lbl.all_but_x
                 ),
-            )
-            self.wait()
-            self.play(
-                FadeOut(i_hidden_node.mathtex_lbl.x_texs),
+                FadeOut(i_hidden_node.mathtex_lbl.x_texs)
             )
             self.wait()
             self.play(
@@ -835,4 +832,4 @@ class NeuralNetworkScene(MovingCameraScene):
 
 
 if __name__ == "__main__":
-    render_scenes(q='l', play=True, scene_names=['NeuralNetworkScene'])
+    render_scenes(q='k', play=True, scene_names=['NeuralNetworkScene'])
