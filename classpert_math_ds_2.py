@@ -1,3 +1,5 @@
+import math
+
 from manim import *
 import numpy as np
 from sympy import Sum
@@ -52,31 +54,6 @@ class SimpleReimannSum(Scene):
         self.add(ax,plot,rects)
         mobj_to_svg(VGroup(ax,plot,rects), 'out.svg')
 
-
-class CodeRender(Scene):
-    def construct(self):
-        raw_code = """from sympy import *
-
-x = symbols('x')
-f = 1 / (x-3)
-
-result = limit(f, x, oo)
-
-print(result) # 0
-"""
-
-        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
-        self.add(code)
-        mobj_to_svg(VGroup(code), "out.svg")
-
-class TexRender(Scene):
-    def construct(self):
-
-        a,b,x = sp.symbols('a b x')
-        exp_f = sp.Equality(a**x, b).subs(a,2).subs(b,8)
-
-        tex = MathTex(r"\lim_{h\to0} \frac{f(x+h) -f(x)}{h}")
-        mobj_to_svg(tex, 'out.svg')
 
 class SimplePlot(Scene):
     def construct(self):
@@ -262,5 +239,69 @@ class ClosingSecantLine(Scene):
         self.wait()
 
 
+
+class CodeRender(Scene):
+    def construct(self):
+        raw_code = """from sympy import *
+x = symbols('x')
+f = x**2
+dx = diff(f, x)
+print(dx) # 2*x
+"""
+
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
+        self.add(code)
+        mobj_to_svg(VGroup(code), "out.svg")
+
+class TexRender(Scene):
+    def construct(self):
+
+        a,b,x = sp.symbols('a b x')
+        exp_f = sp.Equality(a**x, b).subs(a,2).subs(b,8)
+
+        tex = MathTex(r"f(x,y) &= 3x^2 +  5y^2")
+        mobj_to_svg(tex, 'out.svg')
+
+class ThreeDDerivative(ThreeDScene):
+    def construct(self):
+        self.set_camera_orientation(phi=70 * DEGREES, theta=-30 * DEGREES)
+
+        ax = ThreeDAxes(x_range=(-1, 1, 1), y_range=(-1, 1, 1), z_range=(-10, 10, 1))
+
+
+        def param_f(u, v):
+            x1 = u
+            x2 = v
+            y = 3*x1**2 + 5*x2**3
+            return ax.c2p(x1, x2, y)
+
+        plot = Surface(
+            param_f,
+            resolution=(42, 42),
+            v_range=[-1, +1],
+            u_range=[-1, +1]
+        )
+        plot.set_style(fill_opacity=.5, stroke_color=RED, fill_color=CLASSPERT_ORANGE)
+
+        x1,x2,y = sp.symbols('x1 x2 y')
+        f = 3*x1**2 + 5*x2**3
+
+        _x1, _x2, _y = .5, .5, f.subs([(x1, .5), (x2, .5)]).evalf()
+
+        dx1 = sp.diff(f, x1)
+        dx2 = sp.diff(f, x2)
+
+        _dx1 = dx1.subs([(x1, .5), (x2, .5)]).evalf()
+        _dx2 = dx2.subs([(x1, .5), (x2, .5)]).evalf()
+
+
+        dot = Dot3D(point=ax.c2p(*[.5, .5, f.subs([(x1, _x1), (x2, _x1), (y,_y)]).evalf()]),
+                    color=RED)
+
+        slope1 = DashedLine(start=ax.c2p(0,0,0), end=ax.c2p(.5,0,_dx1*.5), color=YELLOW).move_to(dot)
+        slope2 = DashedLine(start=ax.c2p(0,0,0), end=ax.c2p(0,.5,_dx2*.5), color=YELLOW).move_to(dot)
+
+        self.add(ax,plot, slope1, slope2, dot)
+
 if __name__ == "__main__":
-    render_scenes(q="l", scene_names=['TexRender'])
+    render_scenes(q="k", scene_names=['TexRender'])
