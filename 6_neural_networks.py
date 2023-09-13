@@ -247,6 +247,8 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
 
+
+
         # CONNECT INPUT TO HIDDEN
         input_to_hidden = self.connect_layers(
             input_layer,
@@ -257,10 +259,13 @@ class NeuralNetworkScene(MovingCameraScene):
         # CONNECT HIDDEN TO OUTPUT
         hidden_to_output = self.connect_layers(hidden_layer, output_layer, 9)
 
+        # ==========================
+        self.next_section("Fade out labels before making connections", skip_animations=skip_flag)
+
         # remove the node labels containing expressions in hidden layer
-        self.remove(*[node.mathtex_lbl for node in output_layer],
-                    *[node.mathtex_lbl for node in hidden_layer]
-                    )
+        self.play(*[FadeOut(lbl) for lbl in [*[node.mathtex_lbl for node in output_layer],
+                    *[node.mathtex_lbl for node in hidden_layer]]
+                    ])
 
         self.wait()
 
@@ -787,7 +792,7 @@ class NeuralNetworkScene(MovingCameraScene):
         self.wait()
 
         # jump to sigmoid activation function
-        self.next_section("Jump to sigmoid", skip_animations=False)
+        self.next_section("Jump to sigmoid", skip_animations=skip_flag)
 
 
         # create objects for RelU graph
@@ -841,4 +846,4 @@ class NeuralNetworkScene(MovingCameraScene):
 
 
 if __name__ == "__main__":
-    render_scenes(q='k', play=True, scene_names=['NeuralNetworkScene'])
+    render_scenes(q='l', gif=True, scene_names=['NeuralNetworkScene'])

@@ -238,30 +238,6 @@ class ClosingSecantLine(Scene):
         )
         self.wait()
 
-
-
-class CodeRender(Scene):
-    def construct(self):
-        raw_code = """from sympy import *
-x = symbols('x')
-f = x**2
-dx = diff(f, x)
-print(dx) # 2*x
-"""
-
-        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
-        self.add(code)
-        mobj_to_svg(VGroup(code), "out.svg")
-
-class TexRender(Scene):
-    def construct(self):
-
-        a,b,x = sp.symbols('a b x')
-        exp_f = sp.Equality(a**x, b).subs(a,2).subs(b,8)
-
-        tex = MathTex(r"f(x,y) &= 3x^2 +  5y^2")
-        mobj_to_svg(tex, 'out.svg')
-
 class ThreeDDerivative(ThreeDScene):
     def construct(self):
         self.set_camera_orientation(phi=70 * DEGREES, theta=-30 * DEGREES)
@@ -303,5 +279,41 @@ class ThreeDDerivative(ThreeDScene):
 
         self.add(ax,plot, slope1, slope2, dot)
 
+
+class CodeRender(Scene):
+    def construct(self):
+        raw_code = """from sympy import *
+
+x, y, z = symbols('x y z')
+f = 3*x**2 + 5*y**3
+
+dx = diff(f, x)
+dy = diff(f, y)
+
+print(dx) # 6*x
+print(dy) # 15*y**2
+"""
+
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
+        self.add(code)
+        mobj_to_svg(VGroup(code), "out.svg")
+
+class TexRender(Scene):
+    def construct(self):
+
+        x,y,z = sp.symbols('x y z')
+        f = 3*x**2 + 5*y**3
+
+        dx = sp.diff(f, x)
+        dy = sp.diff(f, y)
+
+        print(dx)
+        print(dy)
+
+        tex = MathTex(r" \delta \over \delta x &=", sp.latex(dx1), r"\\", r"\delta \over \delta y &=", sp.latex(dx2))
+        tex = MathTex("f(x,y) = ", sp.latex(f))
+
+        mobj_to_svg(tex, 'out.svg')
+
 if __name__ == "__main__":
-    render_scenes(q="k", scene_names=['TexRender'])
+    render_scenes(q="l", scene_names=['CodeRender'])

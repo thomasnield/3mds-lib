@@ -86,7 +86,7 @@ class LogoScene(Scene):
 class TitleScene(Scene):
 
     def construct(self):
-        title = Text("Normal Distribution")
+        title = Text("Neural Networks")
         subtitle = Text("in 3 Minutes",color=BLUE).scale(.75).next_to(title, DOWN)
 
         self.play(FadeIn(title), FadeIn(subtitle), run_time=2)
@@ -120,4 +120,4 @@ class ClosingCard(Scene):
 # execute all scene renders
 if __name__ == "__main__":
     #render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
-    render_scenes(q="h", scene_names=["LogoScene"], last_scene=True)
+    render_scenes(q="k", scene_names=["ClosingCard"])
