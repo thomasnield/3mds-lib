@@ -181,8 +181,6 @@ class ScaleVectorScene(Scene):
         v_lbl = MathTex(r"\vec{v} = \begin{bmatrix} 2 \\ 1 \end{bmatrix}", color=YELLOW) \
             .next_to(v.get_tip(), RIGHT, aligned_edge=DOWN)
 
-        #self.add(index_labels(v_lbl[0]))
-
         self.play(Write(np))
         self.wait()
         self.play(GrowArrow(v))
@@ -252,6 +250,142 @@ class AddVectorScene(Scene):
         self.play(FadeIn(plus), MoveToTarget(v_lbl), MoveToTarget(w_lbl))
 
         self.wait()
+        self.remove(w_lbl)
+        w_lbl = w_lbl.copy()
+        self.add(w_lbl)
+
+        # NOW SHOW CODE NEXT TO IT
+        raw_code = """import numpy as np
+v = np.array([1, 3])
+w = np.array([2, -1])
+print(v+w) # [3, 2]
+"""
+
+        left_pane = VGroup(np, v, w, v_lbl, w_lbl, v_plus_w, plus)
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
+
+        VGroup(left_pane.generate_target(), code).arrange(RIGHT, buff=1)
+        self.play(MoveToTarget(left_pane))
+        self.wait()
+        self.play(Write(code))
+        self.wait()
+
+class MatrixVectorMultiplication(Scene):
+    def construct(self):
+
+        class Matrix2x2Tex(MathTex):
+            def __init__(self, a, b, c, d, colors=None, **kwargs):
+                self.matrix_tex = sp.latex(sp.Matrix([[a,b],[c,d]]))
+                super().__init__(self.matrix_tex, **kwargs)
+
+                self.left_bracket = self[0][0]
+
+                global i
+                i=1
+                def incr(j):
+                    global i
+                    if type(j) == str:
+                        i += len(j)
+                    else:
+                        i += j
+                    return i
+
+                self.a = self[0][i:incr(a)]
+                self.b = self[0][i:incr(b)]
+                self.c = self[0][i:incr(c)]
+                self.d = self[0][i:incr(d)]
+                self.right_bracket = self[0][-1]
+
+                if colors:
+                    for t,c in zip((self.a,self.b,self.c,self.d), colors): t.set_color(c)
+
+
+        class Vector2x1Tex(MathTex):
+            def __init__(self, x, y, colors=None, **kwargs):
+                self.matrix_tex = sp.latex(sp.Matrix([[x],[y]]))
+                super().__init__(self.matrix_tex, **kwargs)
+
+                self.left_bracket = self[0][0]
+
+                global i
+                i=1
+                def incr(j):
+                    global i
+                    if type(j) == str:
+                        i += len(j)
+                    else:
+                        i += j
+                    return i
+
+                self.x = self[0][i:incr(x)]
+                self.y = self[0][i:incr(y)]
+                self.right_bracket = self[0][-1]
+
+                if colors:
+                    for t,c in zip((self.x, self.y), colors): t.set_color(c)
+
+        class MatrixVector2x1Result(MathTex):
+            def __init__(self, a,b,c,d,x,y, colors = (WHITE,)*6, **kwargs):
+
+                self.matrix_tex = sp.latex(sp.Matrix([[a,b],[c,d]]) @ sp.Matrix([[x],[y]]))
+                super().__init__(self.matrix_tex,**kwargs)
+
+                self.left_bracket = self[0][0]
+                global i
+                i=1
+                def incr(j):
+                    global i
+                    if type(j) == str:
+                        i += len(j)
+                    else:
+                        i += j
+                    return i
+
+                self.a = self[0][1: incr(a)].set_color(colors[0])
+                self.x1 = self[0][i: incr(x)].set_color(colors[4])
+                self.plus_top = self[0][i:incr(1)]
+                self.b = self[0][i: incr(b)].set_color(colors[1])
+                self.y1 = self[0][i: incr(y)].set_color(colors[5])
+                self.c = self[0][i:incr(c)].set_color(colors[2])
+                self.x2 = self[0][i:incr(x)].set_color(colors[4])
+                self.plus_bottom = self[0][i:incr(1)]
+                self.d = self[0][i:incr(d)].set_color(colors[3])
+                self.y2 = self[0][i:incr(y)].set_color(colors[5])
+                self.right_bracket = self[0][-1]
+
+
+        A = Matrix2x2Tex("a","b","c","d", (BLUE,BLUE,RED,RED))
+        X = Vector2x1Tex("x", "y", (YELLOW,)*2)
+        B = MatrixVector2x1Result("a","b","c","d","x","y", (BLUE,BLUE,RED,RED,YELLOW,YELLOW))
+        eq = Tex("=")
+
+        VGroup(A,X,eq, B).arrange(RIGHT).scale(2)
+
+        self.add(A,X, eq, B.left_bracket, B.right_bracket)
+
+        self.play(
+            ReplacementTransform(A.a.copy(), B.a),
+            ReplacementTransform(A.b.copy(), B.b)
+        )
+        self.wait()
+        self.play(
+            ReplacementTransform(X.x.copy(), B.x1),
+            ReplacementTransform(X.y.copy(), B.y1),
+        )
+        self.play(FadeIn(B.plus_top))
+        self.wait()
+        self.play(
+            ReplacementTransform(A.c.copy(), B.c),
+            ReplacementTransform(A.d.copy(), B.d)
+        )
+        self.wait()
+        self.play(
+            ReplacementTransform(X.x.copy(), B.x2),
+            ReplacementTransform(X.y.copy(), B.y2)
+        )
+        self.play(FadeIn(B.plus_bottom))
+        self.wait()
+
 
 if __name__ == "__main__":
-    render_scenes(q='l', play=True, scene_names=['AddVectorScene'])
+    render_scenes(q='l', play=True, scene_names=['MatrixVectorMultiplication'])

@@ -1,11 +1,7 @@
-import math
-
 from manim import *
 import numpy as np
-from sympy import Sum
 
 from threemds.utils import render_scenes, file_to_base_64, mobj_to_svg, mobj_to_png
-import pandas as pd
 import sympy as sp
 
 #config.frame_rate = 60
@@ -279,19 +275,104 @@ class ThreeDDerivative(ThreeDScene):
 
         self.add(ax,plot, slope1, slope2, dot)
 
+class GradientDescent1(Scene):
+    def construct(self):
+        ax = Axes(x_range=(-1,5,1), y_range=(-1,7, 1), x_length=5, y_length=5)
+
+        f = lambda x: (x-2)**2 + 1
+
+        plt = ax.plot(f, color=YELLOW)
+        lowest_point = Dot(ax.c2p(2,1), color=RED)
+        tangent = DashedVMobject(TangentLine(plt, alpha=.5, length=4, color=CLASSPERT_ORANGE))
+
+        self.add(ax,plt, lowest_point, tangent)
+
+        mobj_to_svg(VGroup(ax,plt,lowest_point, tangent), 'out.svg')
+
+class GradientDescent2(Scene):
+    def construct(self):
+        ax = Axes(x_range=(-1,5,1), y_range=(-1,7, 1))
+        f = lambda x: (x-2)**2 + 1
+        dx_f = lambda x: 2 * x - 4
+
+        plt = ax.plot(f, color=YELLOW)
+
+        x = ValueTracker(0.1)
+        point = always_redraw(lambda:  Dot(ax.c2p(x.get_value(), f(x.get_value())), color=RED))
+
+        tangent = always_redraw(lambda: DashedVMobject(
+                ax.get_secant_slope_group(x.get_value(),
+                                          plt,
+                                          dx=.00001,
+                                          secant_line_length=3)[2].set_color(CLASSPERT_ORANGE)
+            )
+        )
+
+        L = 0.01
+        iterations = 1000
+        self.add(ax,plt, point, tangent)
+
+        for i in range(iterations):
+            d_x = dx_f(x.get_value())
+            self.play(x.animate.set_value(x.get_value() - L * d_x), run_time=1/100)
+
+        self.wait()
+
+class ReimannSums(Scene):
+    def construct(self):
+        ax = Axes(x_range=(-1, 5, 1), y_range=(-1, 7, 1))
+        f = lambda x: (x - 2) ** 2 + 1
+        plt = ax.plot(f, color=YELLOW)
+
+        rects = ax.get_riemann_rectangles(plt,
+                                          x_range=(0,2),
+                                          dx=.5,
+                                          fill_opacity=.6, color=CLASSPERT_ORANGE)
+
+        self.next_section("animations", skip_animations=False)
+
+        self.add(ax,plt)
+        self.play(Write(rects))
+        self.wait()
+
+        for dx in (.25,.125,.1,.05, .025):
+
+            new_rects = ax.get_riemann_rectangles(plt,
+                                          x_range=(0,2),
+                                          dx=dx,
+                                          fill_opacity=.6, color=CLASSPERT_ORANGE)
+
+            self.play(ReplacementTransform(rects, new_rects))
+            rects = new_rects
+
+            self.wait()
+
+        area = ax.get_area(plt, x_range=(0,2), color=CLASSPERT_ORANGE, opacity=.6)
+        self.play(
+            FadeTransform(rects, area)
+        )
+        self.wait()
+        self.next_section("final", skip_animations=False)
+
+        #mobj_to_svg(VGroup(ax, plt, area), 'out.svg')
+
+
 
 class CodeRender(Scene):
     def construct(self):
         raw_code = """from sympy import *
 
-x, y, z = symbols('x y z')
-f = 3*x**2 + 5*y**3
+# Declare 'x' to SymPy
+x = symbols('x')
 
-dx = diff(f, x)
-dy = diff(f, y)
+# Now just use Python syntax to declare function
+f = (x - 2)**2 + 1
 
-print(dx) # 6*x
-print(dy) # 15*y**2
+# Calculate the integral of the function with respect to x
+# for the area between x = 0 and 2
+area = integrate(f, (x, 0, 2))
+
+print(area) # prints 14/3
 """
 
         code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
@@ -302,18 +383,11 @@ class TexRender(Scene):
     def construct(self):
 
         x,y,z = sp.symbols('x y z')
-        f = 3*x**2 + 5*y**3
+        f = (x-2)**2 + 1
 
-        dx = sp.diff(f, x)
-        dy = sp.diff(f, y)
-
-        print(dx)
-        print(dy)
-
-        tex = MathTex(r" \delta \over \delta x &=", sp.latex(dx1), r"\\", r"\delta \over \delta y &=", sp.latex(dx2))
-        tex = MathTex("f(x,y) = ", sp.latex(f))
+        tex = MathTex(r"A^{-1}AX = A^{-1}B")
 
         mobj_to_svg(tex, 'out.svg')
 
 if __name__ == "__main__":
-    render_scenes(q="l", scene_names=['CodeRender'])
+    render_scenes(q="l", play=True, scene_names=['TexRender'])

@@ -1,5 +1,5 @@
-from sympy import *
-x = symbols('x')
-f = x**2
-dx = diff(f, x)
-print(dx) # 2*x
+
+i = 0;
+
+while i < 4:
+    print(++i1)
