@@ -1,5 +1,6 @@
+import numpy as np
+from numpy.linalg import det
+A = np.array([[-1, 1],
+                  [2, -2]])
 
-i = 0;
-
-while i < 4:
-    print(++i1)
+print(det(A)) # 0,0
