@@ -14,7 +14,7 @@ BULLET_BUFF=.75
 BULLET_TEX_SCALE=.8
 
 class Die(VGroup):
-    def __init__(self, num_dots, *vmobjects, **kwargs):
+    def __init__(self, num_dots, dot_color=RED, *vmobjects, **kwargs):
         super().__init__(*vmobjects, **kwargs)
         highlighted_dots = set()
         if num_dots == 1:
@@ -30,19 +30,19 @@ class Die(VGroup):
         elif num_dots == 6:
             highlighted_dots = (0,1,2,6,7,8)
 
-        for i in range(9): self.add(Circle(.2, color=RED if i in highlighted_dots else None))
+        for i in range(9): self.add(Circle(.2, color=dot_color if i in highlighted_dots else None))
         self.arrange_in_grid(3,3).rotate(90*DEGREES)
         self.add(Rectangle(height=self.height * 1.2, width=self.width * 1.2))
 
 class Coin(VGroup):
-    def __init__(self, *vmobjects, **kwargs):
+    def __init__(self, symbol="\$", tex_color=RED, *vmobjects, **kwargs):
         super().__init__(*vmobjects, **kwargs)
 
         _coin = Circle(radius=.75, color=WHITE)
-        dollar = Tex(r"\$", color=RED) \
+        _symbol = Tex(symbol, color=tex_color) \
             .scale_to_fit_height(_coin.height * .6)
 
-        self.add(_coin, dollar)
+        self.add(_coin, _symbol)
 
 
 class ProbabilityTitle(Scene):
@@ -133,6 +133,42 @@ class ThinkingProbability(Scene):
         self.play(*[Write(m) for m in (title, tex)], lag_ratio=.5)
         self.wait()
 
+class DieAndCoinSequence(VGroup):
+    def __init__(self, *vmobjects, **kwargs):
+        super().__init__(*vmobjects, **kwargs)
+        self.combos1 = VGroup(
+            *[VGroup(Coin(cv, tex_color=BLUE if cv == "T" else RED), Die(dv, dot_color=YELLOW)).arrange(DOWN, buff=.75)
+              for cv in ("H",) for dv in (1, 2, 3, 4, 5, 6)]) \
+            .arrange(RIGHT, buff=.75) \
+            .scale_to_fit_width(6)
+
+        self.combos2 = VGroup(
+            *[VGroup(Coin(cv, tex_color=BLUE if cv == "T" else RED), Die(dv, dot_color=YELLOW)).arrange(DOWN, buff=.75)
+              for cv in ("T",) for dv in (6, 5, 4, 3, 2, 1)]) \
+            .arrange(RIGHT, buff=.75) \
+            .scale_to_fit_width(6)
+
+        self.all_combos = VGroup(self.combos1, self.combos2).arrange(RIGHT)
+        self.add(self.all_combos)
+
+        self.heads_outcome_brace = Brace(self.combos1, DOWN, color=RED)
+        self.heads_outcome_brace_txt = MathTex(r"\frac{6}{12}", color=RED).next_to(self.heads_outcome_brace, DOWN)
+
+        self.six_outcome_brace = Brace(VGroup(self.combos1[-1], self.combos2[0]), DOWN, color=YELLOW).shift(DOWN * .5)
+        self.six_outcome_brace_txt = MathTex(r"\frac{2}{12}", color=YELLOW).next_to(self.six_outcome_brace, DOWN)
+
+        self.heads_and_six_outcome_brace = Brace(self.combos1[-1], DOWN, color=ORANGE)
+        self.heads_and_six_outcome_brace_txt = MathTex(r"\frac{1}{12}", color=ORANGE).next_to(self.heads_and_six_outcome_brace, DOWN)
+
+        self.joint_box = DashedVMobject(Rectangle(color=PURPLE) \
+                                   .stretch_to_fit_height(self.combos1[-1].height * 1.2) \
+                                   .stretch_to_fit_width(self.combos1[-1].width * 1.2) \
+                                   .move_to(self.combos1[-1])
+                                   )
+
+        self.add(self.heads_outcome_brace, self.heads_outcome_brace_txt, self.six_outcome_brace, self.six_outcome_brace_txt, self.joint_box)
+
+
 class JointProbability(Scene):
 
     def construct(self):
@@ -178,6 +214,28 @@ class JointProbability(Scene):
 
         self.play(ReplacementTransform(tex4[1], answer))
         self.play(MoveToTarget(answer), MoveToTarget(tex4[0]))
+        self.wait()
+
+class JointProbabilityExplanation(Scene):
+    def construct(self):
+        top_tex =  MathTex(r"P(H \text{ and } 6)", "=", r" \frac{1}{2} \times \frac{1}{6}").to_edge(UP)
+        top_tex[0][2].set_color(RED)
+        top_tex[0][6].set_color(YELLOW)
+
+        seq = DieAndCoinSequence()
+
+        self.play(Write(top_tex))
+        self.wait()
+
+        self.play(Write(seq.all_combos))
+        self.wait()
+        self.play(Write(seq.heads_and_six_outcome_brace))
+        self.play(Write(seq.heads_and_six_outcome_brace_txt))
+        self.wait()
+        self.play(seq.heads_and_six_outcome_brace_txt.animate.move_to(top_tex[-1], aligned_edge=LEFT),
+                  FadeOut(top_tex[-1]),
+                  FadeOut(seq.heads_and_six_outcome_brace)
+                  )
         self.wait()
 
 class UnionProbability(Scene):
@@ -238,10 +296,69 @@ class UnionProbability(Scene):
         self.play(MoveToTarget(answer), MoveToTarget(tex4[0]))
         self.wait()
 
+class UnionProbabilityExplanation(Scene):
+    def __init__(self):
+        super().__init__()
+
+        union_tex = MathTex(r"P(H \text{ or } 6) = ", r"\frac{6}{12}", "+", r"\frac{2}{12}", r"-", r"\frac{6}{12}", r"\times", r"\frac{2}{12}").to_edge(UP)
+        sequence = DieAndCoinSequence()
+        self.add(union_tex, sequence)
+
+
 class ConditionalProbability(Scene):
     def construct(self):
-        pass
+        title = Tex("Conditional Probability", color=BLUE).scale(1.3).to_edge(UL)
+        tex1 = MathTex(r"P(A|B)").scale(2)
+        tex2 = MathTex(r"P(A \text{ given } B)").scale(2).next_to(tex1, DOWN)
+
+        self.play(Write(title))
+        self.wait()
+        self.play(Write(tex1))
+        self.wait()
+        self.play(ReplacementTransform(tex1.copy(), tex2))
+        self.wait()
+
+        p_rain = MathTex(r"P(", r"\text{flood}", r") = .05").scale(1.3).move_to(tex1)
+        p_rain[1].set_color(RED)
+
+        p_rain_given_flood = MathTex(r"P(", r"\text{flood}", r"\text{ given }", r"\text{rain}", r") = .80").scale(1.3).next_to(p_rain, DOWN)
+        p_rain_given_flood[1].set_color(RED)
+        p_rain_given_flood[3].set_color(BLUE)
+
+        self.play(ReplacementTransform(tex1, p_rain), ReplacementTransform(tex2, p_rain_given_flood))
+        self.wait()
+
+class BayesTheorem(Scene):
+    def construct(self):
+        title = Tex("Bayes Theorem", color=BLUE).scale(1.3).to_edge(UL)
+        self.play(Write(title))
+        self.wait()
+
+        bt_tex = MathTex(r"P(A|B) = \frac{P(B|A) \times P(A)}{P(B)}").scale(1.3)
+        self.play(Write(bt_tex))
+        self.wait()
+
+class VideoGameHomicidalExample(Scene):
+    def construct(self):
+        self.add(Tex("Bayes Theorem", color=BLUE).scale(1.3).to_edge(UL))
+
+        p_homicidal_gamer = MathTex(r"P(", r"\text{homicidal}", r"|", r"\text{gamer}", r")", "=", ".85").scale(1.3)
+        p_homicidal_gamer[1].set_color(RED)
+        p_homicidal_gamer[3].set_color(BLUE)
+
+        self.play(Write(p_homicidal_gamer))
+        self.wait()
+
+        p_gamer_homicidal = MathTex(r"P(", r"\text{gamer}", r"|", r"\text{homicidal}", r")", "=", r"\text{ ? }").scale(1.3)
+        p_gamer_homicidal[1].set_color(BLUE)
+        p_gamer_homicidal[3].set_color(RED)
+
+        VGroup(p_homicidal_gamer.generate_target(), p_gamer_homicidal).arrange(DOWN, buff=.75)
+
+        self.play(MoveToTarget(p_homicidal_gamer), Write(p_gamer_homicidal))
+        self.wait()
+
 
 
 if __name__ == "__main__":
-    render_scenes(q='l',play=True, scene_names=["UnionProbability"])
+    render_scenes(q='l',play=True, scene_names=["VideoGameHomicidalExample"])
