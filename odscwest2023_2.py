@@ -338,7 +338,51 @@ class BayesTheorem(Scene):
         self.play(Write(bt_tex))
         self.wait()
 
-class VideoGameHomicidalExample(Scene):
+class BayesTheoremTex(MathTex):
+    def __init__(self, a:str, b: str,  **kwargs):
+
+        tex_strings = []
+        p_a = r"P(\text{" + a + r"})"
+        p_b = r"P(\text{" + b + "})"
+        p_a_b = r"P(\text{" + a + r"}|\text{" + b + r"})"
+        p_b_a = r"P(\text{" + b + r"}|\text{" + a + r"})"
+
+        tex =  p_a_b + r" = \frac{" + p_b_a  + r" \times " + p_a + "}{" + p_b + "}"
+        print(tex)
+        super().__init__(tex, **kwargs)
+
+        global i
+        i = 2
+
+        def incr(j):
+            global i
+            if type(j) == str:
+                i += len(j)
+            else:
+                i += j
+            return i
+
+        self.a1 = self[0][i:incr(a)] # capture A
+        incr(1)
+        self.b1 = self[0][i:incr(b)] # capture b
+        self.a_given_b = self[0][0:i+1]
+        incr(4)
+        self.b2 = self[0][i:incr(b)] # capture b
+        incr(1)
+        self.a2 = self[0][i:incr(a)] # capture a
+        self.b_given_a = self[0][i-len(a)-len(b)-3:i+1]
+        incr(4)
+        self.a3 = self[0][i:incr(a)] # capture a
+        self.p_a = self[0][i-len(a)-2:i+1]
+        incr(4)
+        self.b3 = self[0][i:incr(b)] # capture b
+        self.p_b = self[0][-len(b)-3:]
+
+        VGroup(self.a1, self.a2, self.a3).set_color(RED)
+        VGroup(self.b1, self.b2, self.b3).set_color(BLUE)
+
+
+class VideoGameHomicidalExample1(Scene):
     def construct(self):
         self.add(Tex("Bayes Theorem", color=BLUE).scale(1.3).to_edge(UL))
 
@@ -358,7 +402,39 @@ class VideoGameHomicidalExample(Scene):
         self.play(MoveToTarget(p_homicidal_gamer), Write(p_gamer_homicidal))
         self.wait()
 
+class VideoGameHomicidalExample2(Scene):
+    def construct(self):
+
+        self.add(Tex("Bayes Theorem", color=BLUE).scale(1.3).to_edge(UL))
+
+        bt1 = BayesTheoremTex("A", "B")
+        self.play(Write(bt1))
+        self.wait()
+
+        bt2 = BayesTheoremTex("Homicidal", "Gamer")
+        self.play(ReplacementTransform(bt1, bt2))
+        self.wait()
+
+        p_solve = MathTex(r" = \frac{.85 \times .0001 }{.19}")
+        p_solve[0][5:10].set_color(RED)
+        p_solve[0][12:15].set_color(BLUE)
+
+        a_given_b = bt2.a_given_b.copy()
+        self.add(a_given_b)
+        VGroup(a_given_b.generate_target(), p_solve).arrange(RIGHT)
+        self.play(FadeOut(bt2))
+
+        self.play(MoveToTarget(a_given_b), Write(p_solve))
+        self.wait()
+
+        p_solved = MathTex("= .0004").next_to(p_solve, DOWN, buff=.75, aligned_edge=LEFT)
+        self.play(Write(p_solved))
+        self.wait()
+        self.play(Circumscribe(p_solved))
+        self.wait()
+
+
 
 
 if __name__ == "__main__":
-    render_scenes(q='l',play=True, scene_names=["VideoGameHomicidalExample"])
+    render_scenes(q='l',play=True, scene_names=["VideoGameHomicidalExample2"])
