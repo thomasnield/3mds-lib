@@ -542,7 +542,8 @@ class VennDiagramBayes(MovingCameraScene):
         self.wait()
         self.play(
             Restore(self.camera.frame),
-            *[FadeOut(m) for m in (diff1,diff2,intersect)]
+            *[FadeOut(m) for m in (diff1,diff2,intersect)],
+            run_time=3
         )
         self.wait()
 
