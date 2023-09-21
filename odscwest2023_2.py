@@ -434,7 +434,118 @@ class VideoGameHomicidalExample2(Scene):
         self.wait()
 
 
+class VennDiagramBayes(MovingCameraScene):
+    def construct(self):
+
+        # change line width behavior on camera zoom
+        INITIAL_LINE_WIDTH_MULTIPLE = self.camera.cairo_line_width_multiple
+        INITIAL_FRAME_WIDTH = config.frame_width
+
+        def line_scale_down_updater(mobj):
+            proportion = self.camera.frame.width / INITIAL_FRAME_WIDTH
+            self.camera.cairo_line_width_multiple = INITIAL_LINE_WIDTH_MULTIPLE * proportion
+
+        mobj = Mobject()
+        mobj.add_updater(line_scale_down_updater)
+        self.add(mobj)
+
+        whole = Circle(radius=3.5,color=YELLOW)
+        whole_txt = Tex("100K Population").move_to(whole)
+        self.play(*[Write(m) for m in (whole, whole_txt)])
+        self.wait()
+
+        gamers = Circle(radius=1.5, color=BLUE).move_to([0,-2,0])
+        gamers_txt = Tex("19K Gamers").scale(.75).move_to(gamers)
+        self.play(*[Write(m) for m in (gamers, gamers_txt)])
+        self.wait()
+
+        homicidals = Circle(radius=.0356, color=RED) \
+            .move_to(gamers.get_top()) \
+            .shift(.02 * DOWN) \
+            .rotate(45*DEGREES, about_point=gamers.get_center())
+
+        homicidals_txt = Tex("10 Homicidals") \
+            .scale_to_fit_width(homicidals.width * .6) \
+            .move_to(homicidals)
+
+        self.play(*[Write(m) for m in (homicidals, homicidals_txt)])
+        self.wait()
+
+        self.wait()
+        self.camera.frame.save_state()
+
+        self.play(
+            self.camera.frame.animate.set(height=homicidals.height * 1.2) \
+                .move_to(homicidals),
+            run_time=3
+        )
+        self.wait()
+
+        homicidals_txt.save_state()
+        homicidals_play_games_txt = Tex(r"8.5 homicidals","are gamers").arrange(DOWN) \
+            .scale_to_fit_width(homicidals.width * .6) \
+            .move_to(homicidals) \
+            .rotate(45 * DEGREES)
+
+        homicidals_dont_play_games_txt = Tex(r"1.5 homicidals","are not gamers").arrange(DOWN) \
+            .scale_to_fit_width(homicidals.width * .4) \
+            .move_to(homicidals.get_top()) \
+            .shift(.01 * DOWN) \
+            .rotate(45 * DEGREES, about_point=homicidals.get_center())
+
+        self.play(Transform(homicidals_txt,
+                                       VGroup(homicidals_play_games_txt,
+                                            homicidals_dont_play_games_txt)
+                                       )
+                  )
+
+        self.wait()
+        self.play(Restore(homicidals_txt))
+        self.wait()
+        self.play(Restore(self.camera.frame), run_time=3)
+        self.wait()
+        self.play(Wiggle(gamers))
+        self.wait()
+        self.play(Circumscribe(homicidals,color=RED))
+        self.wait()
+
+        self.play(
+            self.camera.frame.animate.set(height=homicidals.height * 1.2) \
+                .move_to(homicidals),
+            run_time=3
+        )
+
+        intersect = Intersection(homicidals, gamers, color=PURPLE, fill_opacity=.6)
+        diff1 = Difference(homicidals, gamers, color=RED, fill_opacity=.6)
+        diff2 = Difference(gamers, homicidals, color=BLUE, fill_opacity=.6)
+
+        homicidals_play_games_prop = Tex(r".85").arrange(DOWN) \
+            .scale_to_fit_width(homicidals.width * .2) \
+            .move_to(homicidals) \
+            .rotate(45 * DEGREES)
+
+        homicidals_dont_play_games_prop = Tex(r".15").arrange(DOWN) \
+            .scale_to_fit_width(homicidals.width * .2) \
+            .move_to(homicidals.get_top()) \
+            .shift(.01 * DOWN) \
+            .rotate(45 * DEGREES, about_point=homicidals.get_center())
+
+        self.play(*[Write(m) for m in (diff1,diff2,intersect)])
+
+        self.wait()
+
+        self.play(Transform(homicidals_txt,
+                                       VGroup(homicidals_play_games_prop,
+                                            homicidals_dont_play_games_prop)
+                                       )
+                  )
+        self.wait()
+        self.play(
+            Restore(self.camera.frame),
+            *[FadeOut(m) for m in (diff1,diff2,intersect)]
+        )
+        self.wait()
 
 
-if __name__ == "__main__":
-    render_scenes(q='l',play=True, scene_names=["VideoGameHomicidalExample2"])
+    if __name__ == "__main__":
+        render_scenes(q='l',play=True, scene_names=["VennDiagramBayes"])
