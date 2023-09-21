@@ -459,9 +459,9 @@ class VennDiagramBayes(MovingCameraScene):
         self.play(*[Write(m) for m in (gamers, gamers_txt)])
         self.wait()
 
-        homicidals = Circle(radius=.0356, color=RED) \
+        homicidals = Circle(radius=.01, color=RED) \
             .move_to(gamers.get_top()) \
-            .shift(.02 * DOWN) \
+            .shift(.005 * DOWN) \
             .rotate(45*DEGREES, about_point=gamers.get_center())
 
         homicidals_txt = Tex("10 Homicidals") \
@@ -490,8 +490,8 @@ class VennDiagramBayes(MovingCameraScene):
         homicidals_dont_play_games_txt = Tex(r"1.5 homicidals","are not gamers").arrange(DOWN) \
             .scale_to_fit_width(homicidals.width * .4) \
             .move_to(homicidals.get_top()) \
-            .shift(.01 * DOWN) \
-            .rotate(45 * DEGREES, about_point=homicidals.get_center())
+            .next_to(gamers.get_top(), UP, buff=.001) \
+            .rotate(45 * DEGREES, about_point=gamers.get_center())
 
         self.play(Transform(homicidals_txt,
                                        VGroup(homicidals_play_games_txt,
@@ -519,25 +519,25 @@ class VennDiagramBayes(MovingCameraScene):
         diff1 = Difference(homicidals, gamers, color=RED, fill_opacity=.6)
         diff2 = Difference(gamers, homicidals, color=BLUE, fill_opacity=.6)
 
-        homicidals_play_games_prop = Tex(r".85").arrange(DOWN) \
+        homicidals_play_games_prop = Tex(r".85") \
             .scale_to_fit_width(homicidals.width * .2) \
             .move_to(homicidals) \
             .rotate(45 * DEGREES)
 
-        homicidals_dont_play_games_prop = Tex(r".15").arrange(DOWN) \
+        homicidals_dont_play_games_prop = Tex(r".15") \
             .scale_to_fit_width(homicidals.width * .2) \
             .move_to(homicidals.get_top()) \
-            .shift(.01 * DOWN) \
-            .rotate(45 * DEGREES, about_point=homicidals.get_center())
+            .next_to(gamers.get_top(), UP, buff=.001) \
+            .rotate(45 * DEGREES, about_point=gamers.get_center())
 
         self.play(*[Write(m) for m in (diff1,diff2,intersect)])
 
         self.wait()
 
         self.play(Transform(homicidals_txt,
-                                       VGroup(homicidals_play_games_prop,
-                                            homicidals_dont_play_games_prop)
-                                       )
+                           VGroup(homicidals_play_games_prop,
+                                homicidals_dont_play_games_prop)
+                           )
                   )
         self.wait()
         self.play(
