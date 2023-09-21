@@ -1,7 +1,7 @@
 import base64
 import re, os, sys
 
-from manim import config, tempconfig, VGroup, Scene, Group
+from manim import config, tempconfig, VGroup, Scene, Group, SVGMobject, WHITE
 from threemds import create_svg_from_vgroup, create_svg_from_vmobject
 
 scene_regex = r"(?<=^class )[A-Za-z0-9]+(?=\([A-Za-z]*Scene.*\))"
@@ -51,6 +51,16 @@ def load_file(filepath):
     text = file.read()
     file.close()
     return text
+
+import tempfile
+import base64
+
+def b64_svg_to_mobj(svg_base64_string, color=WHITE):
+    with tempfile.NamedTemporaryFile(dir=os.getcwd(), suffix=".svg") as temp_file:
+        svg_bytes = base64.b64decode(svg_base64_string)
+        temp_file.write(svg_bytes)
+        temp_file.flush()
+        return SVGMobject(temp_file.name, color=color)
 
 
 def findall(regex, str=None, file=None):
