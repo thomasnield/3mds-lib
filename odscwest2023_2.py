@@ -34,6 +34,16 @@ class Die(VGroup):
         self.arrange_in_grid(3,3).rotate(90*DEGREES)
         self.add(Rectangle(height=self.height * 1.2, width=self.width * 1.2))
 
+class Coin(VGroup):
+    def __init__(self, *vmobjects, **kwargs):
+        super().__init__(*vmobjects, **kwargs)
+
+        _coin = Circle(radius=.75, color=WHITE)
+        dollar = Tex(r"\$", color=RED) \
+            .scale_to_fit_height(_coin.height * .6)
+
+        self.add(_coin, dollar)
+
 
 class ProbabilityTitle(Scene):
     def construct(self):
@@ -150,16 +160,8 @@ class JointProbability(Scene):
         tex4 = MathTex(r"P(H \text{ and } 6)", r" = \frac{1}{2} \times \frac{1}{6}") \
             .scale(1.5)
 
-        _coin = Circle(radius=.75, color=WHITE)
-        dollar = Tex(r"\$", color=RED) \
-            .scale_to_fit_height(_coin.height * .6)
-        coin = VGroup(_coin, dollar)
-
-        _die = VGroup(*[Circle(.2, color=RED if i in (0,2,3,5,6,8) else None) for i in range(9)]) \
-            .arrange_in_grid(3,3,buff=.2)
-
-        die = VGroup(Rectangle(height=_die.height*1.2, width = _die.width*1.2), _die) \
-            .match_height(coin)
+        coin = Coin()
+        die = Die(6).match_height(coin)
 
         coin_and_die = VGroup(coin, die) \
             .arrange(RIGHT, buff=1) \
@@ -191,26 +193,33 @@ class UnionProbability(Scene):
         self.play(ReplacementTransform(tex1.copy(), tex2))
         self.wait()
 
-        tex3 = MathTex(r"P(A \text{ or } B)", r" = P(A) + P(B) - P(A) \times P(B)") \
+        tex3 = MathTex(r"P(A \text{ or } B)", r" = P(A) + P(B)", r"- P(A) \times P(B)") \
             .scale(1)
 
+        add_only = tex3[0:2]
+        add_only.save_state()
+        add_only.move_to(ORIGIN)
+
         self.play(
-            FadeOut(tex1),
-            TransformMatchingShapes(tex2, tex3[0]),
+            FadeOut(tex1), # get rid of top equation
+            TransformMatchingShapes(tex2, add_only[0]),
         )
-        self.play(Write(tex3[1]))
+        self.play(Write(add_only[1]))
+        self.wait()
+
+        # bring in joint probability
+        self.play(Restore(add_only))
+        self.wait()
+        self.play(Write(tex3[2]))
+        self.wait()
+        self.play(Circumscribe(tex3[2]))
         self.wait()
 
         tex4 = MathTex(r"P(H \text{ or } 6)", r" = \frac{1}{2} + \frac{1}{6} - \frac{1}{2} \times \frac{1}{6}") \
             .scale(1)
 
-        _coin = Circle(radius=.75, color=WHITE)
-        dollar = Tex(r"\$", color=RED) \
-            .scale_to_fit_height(_coin.height * .6)
-        coin = VGroup(_coin, dollar)
-
-        die = Die(6) \
-            .match_height(coin)
+        coin = Coin()
+        die = Die(6).match_height(coin)
 
         coin_and_die = VGroup(coin, die) \
             .arrange(RIGHT, buff=1) \
