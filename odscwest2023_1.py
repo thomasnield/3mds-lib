@@ -1037,5 +1037,277 @@ class ThreeDZeroDeterminantScene(ThreeDScene):
         )
         self.wait()
 
+class MatrixMultiplicationVisual(LinearTransformationScene):
+
+    def __init__(self):
+        LinearTransformationScene.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=True
+        )
+
+    def construct(self):
+
+        # setup
+        self.wait()
+        self.add_vector([1, 1], color=YELLOW)
+
+        A = np.array([[0,1],[-1,0]])
+        B = np.array([[1,1],[0,1]])
+
+        matrix_tex = MathTex(sp.latex(sp.Matrix(A)),
+                             sp.latex(sp.Matrix(B)),
+                             "=",
+                             sp.latex(sp.Matrix(B @ A)),
+                             color=WHITE).to_edge(DL)
+
+        #code = Code("")
+        self.add_foreground_mobjects(matrix_tex)
+
+        # rotate
+        self.wait()
+
+        self.moving_mobjects = []
+        self.apply_matrix(A)
+        self.play(Circumscribe(matrix_tex[0]))
+
+        # shear
+        self.wait()
+        self.moving_mobjects = []
+        self.apply_matrix(B)
+        self.play(Circumscribe(matrix_tex[1]))
+        self.wait()
+
+
+        # rewind
+        self.moving_mobjects = []
+        self.apply_matrix(np.linalg.inv(B))
+        self.moving_mobjects = []
+        self.apply_matrix(np.linalg.inv(A))
+        self.wait()
+        self.moving_mobjects = []
+
+        # do consolidated transformation
+        self.apply_matrix(B@A)
+        self.play(Circumscribe(matrix_tex[3]))
+        self.wait()
+
+class MatrixMultiplicationFormula(Scene):
+    def construct(self):
+
+        a,b,c,d,e,f,g,h = sp.symbols('a b c d e f g h')
+        A = sp.Matrix([[a,b],[c,d]])
+        B = sp.Matrix([[e, f], [g, h]])
+        AB = A @ B
+
+        tex = MathTex(
+            sp.latex(A),
+            sp.latex(B),
+            "=",
+            sp.latex(AB)
+        )
+        row_A1 = VGroup(*[m for i,m in enumerate(tex[0]) if i in (1,2)])
+        row_A2 =  VGroup(*[m for i,m in enumerate(tex[0]) if i in (3,4)])
+
+        col_B1 = VGroup(*[m for i,m in enumerate(tex[1]) if i in (1,3)])
+        col_B2 = VGroup(*[m for i,m in enumerate(tex[1]) if i in (2,4)])
+
+        AB_brackets = VGroup(*[m for i,m in enumerate(tex[3]) if i in (0,21)])
+        AB_TL = VGroup(*[m for i,m in enumerate(tex[3]) if i in (1,2,3,4,5)])
+        AB_TR = VGroup(*[m for i,m in enumerate(tex[3]) if i in (6,7,8,9,10)])
+        AB_DL = VGroup(*[m for i,m in enumerate(tex[3]) if i in (11,12,13,14,15)])
+        AB_DR = VGroup(*[m for i,m in enumerate(tex[3]) if i in (16,17,18,19,20)])
+
+        self.play(Write(tex[:-1]), Write(AB_brackets))
+
+        self.wait()
+
+        self.play(*[Circumscribe(m, time_width=4) for m in (row_A1, col_B1)], Write(AB_TL), run_time=2)
+        self.wait()
+        self.play(*[Circumscribe(m, time_width=4) for m in (row_A1, col_B2)], Write(AB_TR), run_time=2)
+        self.wait()
+        self.play(*[Circumscribe(m, time_width=4) for m in (row_A2, col_B1)], Write(AB_DL), run_time=2)
+        self.wait()
+        self.play(*[Circumscribe(m, time_width=4) for m in (row_A2, col_B2)], Write(AB_DR), run_time=2)
+        self.wait()
+
+class MatrixMultiplicationPython(Scene):
+    def construct(self):
+
+        title = Tex("Matrix Multiplication", color=BLUE).scale(1.3).to_edge(UL)
+        self.play(Write(title))
+
+        raw_code = """import numpy as np
+
+A = np.array([[1, 1], [0, 1]])
+B = np.array([[0, 1], [-1, 0]])
+
+print(A @ B)
+# [[-1  1]
+#  [-1  0]]
+"""
+
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window").scale(1.2)
+
+        self.play(Write(code))
+        self.wait()
+
+
+class InverseMatrixTransformation(LinearTransformationScene):
+
+    def __init__(self):
+        LinearTransformationScene.__init__(
+            self,
+            show_coordinates=True,
+            leave_ghost_vectors=False,
+            show_basis_vectors=True
+        )
+
+    def construct(self):
+
+        # begin transformation
+        _A = np.array([[2,1],
+                      [-1,3]])
+
+        _A_inv = np.linalg.inv(_A)
+        _X = np.array([2,1])
+
+        _B = _A @ _X
+
+        self.add_vector(_X, animate=False, color=YELLOW)
+        self.apply_matrix(_A)
+        self.wait()
+
+        A = MathTex("A = ", sp.latex(sp.Matrix(_A))).to_edge(DL).scale(1.3)
+        A_inv = MathTex(r"A^{-1} A = ", sp.latex(sp.Matrix([[1,0],[0,1]]))).to_edge(DL).scale(1.3) #, sp.latex(sp.Matrix(_A_inv))).to_edge(DL).scale(1.3)
+
+        i_hat = lambda mtx: VGroup(*[m for i,m in enumerate(mtx[1]) if i in (1,3,4)])
+        j_hat = lambda mtx: VGroup(*[m for i,m in enumerate(mtx[1]) if i in (2,5)])
+
+        i_hat(A).set_color(GREEN)
+        j_hat(A).set_color(RED)
+        VGroup(*[m for i,m in enumerate(A_inv[1]) if i in (1,3)]).set_color(GREEN)
+        VGroup(*[m for i,m in enumerate(A_inv[1]) if i in (2,4)]).set_color(RED)
+
+        self.play(
+            Write(A)
+        )
+        self.wait()
+        self.moving_mobjects = []
+        self.apply_matrix(_A_inv)
+        self.play(
+            ReplacementTransform(A, A_inv)
+        )
+        self.wait()
+
+
+class InvereMatrixFormulation(Scene):
+    def construct(self):
+        title = Tex("Inverse Matrix", color=BLUE).scale(1.3).to_edge(UL)
+        self.play(Write(title))
+
+        texs = VGroup(
+            MathTex("A =", sp.latex(sp.Matrix([[2,1],[5,2]]))),
+            MathTex(r"A^{-1} A = ", sp.latex(sp.Matrix([[1,0],[0,1]]))),
+            MathTex(r"A^{-1} = \text{ ? }"),
+        ).arrange(DOWN,buff=.75)
+
+        for t in texs:
+            self.play(Write(t))
+            self.wait()
+
+
+class InverseMatrixPython(Scene):
+
+    def construct(self):
+        title = Tex("Inverse Matrix", color=BLUE).scale(1.3).to_edge(UL)
+        self.play(Write(title))
+
+        raw_code = """import numpy as np
+
+A = np.array([[2,1],[5,2]])
+inv_A = np.linalg.inv(A)
+
+print(inv_A)
+# [[-2.  1.]
+#  [ 5. -2.]]
+
+I = inv_A @ A
+print(I)
+# [[1. 0.]
+#  [0. 1.]]
+"""
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai",
+                    background="window")
+
+        self.play(Write(code))
+        self.wait()
+
+
+class SystemsOfEquations(Scene):
+    def consruct(self):
+        pass
+
+class SystemOfEquationsThreeD(ThreeDScene):
+    def construct(self):
+        self.set_camera_orientation(phi=75 * DEGREES, theta=-30 * DEGREES)
+
+        ax = ThreeDAxes(
+            x_range=[-1, 13, 1],
+            y_range=[-1, 6, 1],
+            z_range=[-1, 10, 1]
+        )
+        v_start = np.array([12, 5, 6])
+        v_end = np.array([7.65, -0.45, -0.25])
+
+        matrix = np.array([
+            [2, 9, -3],
+            [1, 2, 7],
+            [1, 2, 3]
+        ])
+
+        raw_code = """import numpy as np
+
+    A = np.array([
+            [2, 9, -3],
+            [1, 2, 7],
+            [1, 2, 3]
+        ])
+    inv_A = np.linalg.inv(A)
+
+    print(inv_A)
+    # [[-0.4  -1.65  3.45]
+    #  [ 0.2   0.45 -0.85]
+    #  [-0.    0.25 -0.25]]
+    """
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai",
+                    background="window").scale(.7).to_edge(DR).shift(RIGHT *3 + UP*3)
+
+
+        vector_start = Arrow3D(start=ax.c2p(0, 0, 0), end=ax.c2p(*(v_start)), color=YELLOW)
+        vector_end = Arrow3D(start=ax.c2p(0, 0, 0), end=ax.c2p(*(v_end)), color=YELLOW)
+
+        i_hat_start = Line(start=ax.c2p(0, 0, 0), end=ax.c2p(*matrix[:, 0]), color=GREEN)
+        j_hat_start = Line(start=ax.c2p(0, 0, 0), end=ax.c2p(*matrix[:, 1]), color=RED)
+        k_hat_start = Line(start=ax.c2p(0, 0, 0), end=ax.c2p(*matrix[:, 2]), color=PURPLE)
+
+        i_hat_end = Line(start=ax.c2p(0, 0, 0), stroke_width=5, end=ax.c2p(1, 0, 0), color=GREEN)
+        j_hat_end = Line(start=ax.c2p(0, 0, 0), stroke_width=5, end=ax.c2p(0, 1, 0), color=RED)
+        k_hat_end = Line(start=ax.c2p(0, 0, 0), stroke_width=5, end=ax.c2p(0, 0, 1), color=PURPLE)
+
+        self.add(ax, vector_start)
+        self.add(i_hat_start, j_hat_start, k_hat_start)
+        self.wait()
+
+        self.play(
+            vector_start.animate.become(vector_end),
+            i_hat_start.animate.become(i_hat_end),
+            j_hat_start.animate.become(j_hat_end),
+            k_hat_start.animate.become(k_hat_end),
+            run_time=3
+        )
+        self.wait(1)
+
 if __name__ == "__main__":
-    render_scenes(q='k',play=True, scene_names=["TransformedThreeDVectorScene"])
+    render_scenes(q='l', play=True, last_frame=True, scene_names=["SystemOfEquationsThreeD"])

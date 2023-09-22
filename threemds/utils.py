@@ -82,7 +82,7 @@ def scene_fit_configs(scene: Scene, padding=0, w_padding=0, h_padding=0):
 def render_scenes(q=None,
                   play=False,
                   gif=False,
-                  last_scene=False,
+                  last_frame=False,
                   frames_only=False,
                   fps=None,
                   transparent=None,
@@ -99,7 +99,7 @@ def render_scenes(q=None,
                           f"{' --fps ' + str(fps) if fps else ''} " \
                           f"{' -p' if play else ''} " \
                           f"{' -g' if frames_only else ''} " \
-                          f"{' -s' if last_scene else ''} " \
+                          f"{' -s' if last_frame else ''} " \
                           f"{' --format=gif' if gif else ''} " \
                           f" -o {i + 1:02d}_{scene_name} {sys.argv[0]} {scene_name}"
 

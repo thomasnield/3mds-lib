@@ -335,5 +335,5 @@ class VectorScaleAndAddScene1(Scene):
         mobj_to_svg(grp, filename="out.svg")
 
 if __name__ == "__main__":
-    render_scenes(q="l", last_scene=True, scene_names=['VectorExamplesDotsScene'])
+    render_scenes(q="l", last_frame=True, scene_names=['VectorExamplesDotsScene'])
     file_to_base_64('/Users/thomasnield/git/3mds-lib/media/images/anaconda_linear_algebra_1/04_VectorExamplesDotsScene.png')

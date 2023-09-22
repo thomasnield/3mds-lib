@@ -405,6 +405,25 @@ class VideoGameHomicidalExample1(Scene):
 class VideoGameHomicidalExample2(Scene):
     def construct(self):
 
+        stats = VGroup(
+            MathTex(r"P(", r"\text{homicidal}", r"|", r"\text{gamer}", r")", "=", ".85"),
+            MathTex(r"P(", r"\text{Gamer}", ") = .19"),
+            MathTex(r"P(", r"\text{Homicidal}", ") = .0001"),
+            MathTex(r"P(", r"\text{gamer}", r"|", r"\text{homicidal}", r")", "=", r"\text{ ? }")
+        ).scale(1.3).arrange(DOWN, buff=.75)
+
+        VGroup(stats[0][1], stats[2][1], stats[3][3]).set_color(RED)
+        VGroup(stats[0][3], stats[1][1], stats[3][1]).set_color(BLUE)
+
+        for m in stats:
+            self.play(Write(m), lag_ratio=2)
+            self.wait()
+
+
+
+class VideoGameHomicidalExample3(Scene):
+    def construct(self):
+
         self.add(Tex("Bayes Theorem", color=BLUE).scale(1.3).to_edge(UL))
 
         bt1 = BayesTheoremTex("A", "B")
@@ -549,4 +568,4 @@ class VennDiagramBayes(MovingCameraScene):
 
 
     if __name__ == "__main__":
-        render_scenes(q='l',play=True, scene_names=["VennDiagramBayes"])
+        render_scenes(q='k')
