@@ -120,4 +120,4 @@ class ClosingCard(Scene):
 # execute all scene renders
 if __name__ == "__main__":
     #render_scenes(q="l", play=True, scene_names=["ConstantsExamples"])
-    render_scenes(q="k", scene_names=["ClosingCard"])
+    render_scenes(q="l", scene_names=["ClosingCard"])

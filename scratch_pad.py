@@ -1,18 +1,16 @@
-import numpy as np
+import math
 
-A = np.array([
-    [2, 9, -3],
-    [1, 2, 7],
-    [1, 2, 3]
-])
+p = 1
 
-inv_A = np.linalg.inv(A)
+# probability of heads 10 times in a row
+for i in range(10):
+    p *= .5
 
-print(inv_A)
-# [[-2.  1.]
-#  [ 5. -2.]]
+print(p) # 9.332636185032189e-302
 
-I = inv_A @ A
-print(I)
-# [[1. 0.]
-#  [0. 1.]]
+# using logarithmic addition
+p = 0
+for i in range(10):
+    p += math.log(.5)
+
+print(math.exp(p)) # 9.332636185154842e-302

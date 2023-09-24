@@ -7,7 +7,6 @@ from pathlib import Path
 
 import cairo
 import numpy as np
-from lxml.html.builder import UL
 from manim import VGroup, VMobject, tempconfig, config, ORIGIN, Scene
 from manim.utils.family import extract_mobject_family_members
 

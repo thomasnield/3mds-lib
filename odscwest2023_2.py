@@ -120,8 +120,6 @@ class ThinkingProbability(Scene):
             Tex(r"\begin{itemize}"
                 r"\item Probability based on belief"
                 r"\item Probability based on data"
-                r"\item Will my flight be late?"
-                r"\item How likely is my product to be defective?"
                 r"\end{itemize}"
                 )
         ).arrange_in_grid(cols=1, cell_alignment=LEFT, buff=BULLET_BUFF) \
@@ -321,7 +319,9 @@ class ConditionalProbability(Scene):
         p_rain = MathTex(r"P(", r"\text{flood}", r") = .05").scale(1.3).move_to(tex1)
         p_rain[1].set_color(RED)
 
-        p_rain_given_flood = MathTex(r"P(", r"\text{flood}", r"\text{ given }", r"\text{rain}", r") = .80").scale(1.3).next_to(p_rain, DOWN)
+        p_rain_given_flood = MathTex(r"P(", r"\text{flood}", r"\text{ given }", r"\text{rain}", r") = .80") \
+            .scale(1.3) \
+            .next_to(p_rain, DOWN)
         p_rain_given_flood[1].set_color(RED)
         p_rain_given_flood[3].set_color(BLUE)
 
