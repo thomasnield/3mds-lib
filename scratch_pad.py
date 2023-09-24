@@ -1,16 +1,26 @@
-import math
+from random import randint, choice
 
-p = 1
+def random_door(): return randint(1, 3)
 
-# probability of heads 10 times in a row
-for i in range(10):
-    p *= .5
+trial_count = 100000
 
-print(p) # 9.332636185032189e-302
+stay_wins = 0
+switch_wins = 0
 
-# using logarithmic addition
-p = 0
-for i in range(10):
-    p += math.log(.5)
+for i in range(0, trial_count):
+    prize_door = random_door()
+    selected_door = random_door()
+    opened_door = choice([d for d in range(1, 4) if d != selected_door and d != prize_door])
+    switch_door = choice([d for d in range(1, 4) if d != selected_door and d != opened_door])
 
-print(math.exp(p)) # 9.332636185154842e-302
+    if selected_door == prize_door:
+        stay_wins += 1
+
+    if switch_door == prize_door:
+        switch_wins += 1
+
+print("STAY WINS: {}, SWITCH WINS: {}".format(
+    stay_wins, switch_wins))
+
+print("STAY WIN RATE: {}, SWITCH WIN RATE: {}".format(
+    float(stay_wins)/float(trial_count), float(switch_wins)/float(trial_count)))

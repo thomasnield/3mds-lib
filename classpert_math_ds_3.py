@@ -443,8 +443,120 @@ class VennDiagramBayes(MovingCameraScene):
         self.wait()
 
 
-    if __name__ == "__main__":
-        render_scenes(q='k')
+class BayesTheoremCode(Scene):
+    def construct(self):
 
+        raw_code = """p_gamer = .19
+p_homicidal = .0001
+p_gamer_given_homicidal = .85
+
+p_homicidal_given_gamer = (p_gamer_given_homicidal * p_homicidal
+                           / p_gamer)
+
+# 0.0004473684210526316
+print(p_homicidal_given_gamer)"""
+
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+
+class Door(VGroup):
+    def __init__(self, is_open=False, *vmobjects, **kwargs):
+        super().__init__(*vmobjects, **kwargs)
+        self.rect = Rectangle(width=3,height=4)
+        self.knob = Circle(radius=.25).move_to(self.rect, aligned_edge=RIGHT).shift(LEFT*.2)
+        self.add(self.rect)
+
+        if not is_open:
+            self.add(self.knob)
+class Goat(SVGMobject):
+    def __init__(self, **kwargs):
+        super().__init__('goat.svg')
+        self.set_color(RED)
+class Laptop(SVGMobject):
+    def __init__(self, **kwargs):
+        super().__init__('laptop.svg', stroke_color=WHITE,stroke_width=1)
+
+class MontyHall1(Scene):
+    def construct(self):
+        doors = VGroup(
+            *[Door() for _ in range(3)]
+        ).arrange(RIGHT, buff=1)
+        self.add(doors)
+        mobj_to_svg(doors)
+
+
+class MontyHall2(Scene):
+    def construct(self):
+        doors = VGroup(
+            *[Door() for _ in range(3)]
+        ).arrange(RIGHT, buff=1)
+        doors[1].rect.set_color(YELLOW)
+        self.add(doors)
+        mobj_to_svg(doors)
+
+class MontyHall3(Scene):
+    def construct(self):
+        doors = VGroup(
+            *[Door(is_open= i==2) for i in range(3)]
+        ).arrange(RIGHT, buff=1)
+
+        doors[1].rect.set_color(YELLOW)
+        goat = Goat().scale_to_fit_width(doors[2].width *.75).move_to(doors[2])
+
+        grp = VGroup(doors, goat)
+        mobj_to_svg(grp)
+        self.add(grp)
+
+class MontyHall4(Scene):
+    def construct(self):
+        doors = VGroup(
+            *[Door(is_open= i!=1) for i in range(3)]
+        ).arrange(RIGHT, buff=1)
+
+        doors[0].rect.set_color(YELLOW)
+        goat = Goat().scale_to_fit_width(doors[2].width *.75).move_to(doors[2])
+        laptop = Laptop().scale_to_fit_width(doors[0].width *.75).move_to(doors[0])
+        grp = VGroup(doors, goat, laptop)
+
+        for i,t in enumerate((r"\frac{2}{3}", r"\frac{1}{3}")):
+            grp.add(MathTex(t).next_to(doors[i], DOWN))
+
+        mobj_to_svg(grp,h_padding=2)
+        self.add(grp)
+
+class MontyHallSimulation(Scene):
+    def construct(self):
+
+        raw_code = """from random import randint, choice
+
+def random_door(): return randint(1, 3)
+
+trial_count = 100000
+
+stay_wins = 0
+switch_wins = 0
+
+for i in range(0, trial_count):
+    prize_door = random_door()
+    selected_door = random_door()
+    opened_door = choice([d for d in range(1, 4) if d != selected_door and d != prize_door])
+    switch_door = choice([d for d in range(1, 4) if d != selected_door and d != opened_door])
+
+    if selected_door == prize_door:
+        stay_wins += 1
+
+    if switch_door == prize_door:
+        switch_wins += 1
+
+print("STAY WINS: {}, SWITCH WINS: {}".format(
+    stay_wins, switch_wins))
+
+print("STAY WIN RATE: {}, SWITCH WIN RATE: {}".format(
+    float(stay_wins)/float(trial_count), float(switch_wins)/float(trial_count)))"""
+
+        code = Code(code=raw_code, language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
 if __name__ == "__main__":
-    render_scenes(q="k", play=False, scene_names=['VennDiagramBayes'])
+    render_scenes(q="l", play=True, scene_names=['MontyHallSimulation'])
