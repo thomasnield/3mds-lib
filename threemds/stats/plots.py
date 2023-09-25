@@ -18,7 +18,8 @@ class Histogram(VGroup):
     def __init__(self, data: np.ndarray,
                  bin_count: int,
                  show_points=True,
-                 show_normal_dist=False
+                 show_normal_dist=False,
+                 y_axis_config = None
                  ):
         super().__init__()
 
