@@ -1,17 +1,11 @@
-from scipy.stats import norm
+import numpy as np
+from numpy.linalg import inv
 
-# Conventional formula has mean of 9 colic hours
-# with 1.6 standard deviations
-mean = 9
-std = 1.6
+x = np.array([84,37,58,52,47,78,93,15,12,60])
+y = np.array([155.8,102.0,164.8,120.9,86.8,93.0,201.6,25.2,14.7,118.6])
 
-# Experimental formula showed 5.5 hours of colic
-x = 5.5
+x_1 = np.vstack([x, np.ones(len(x))]).T
 
-# Probability of 5.5
-tail_p = norm.cdf(x, mean, std)
+coeffs = inv(x_1.transpose() @ x_1) @ (x_1.transpose() @ y)
 
-# Get p-value of both tails
-p_value = 2*tail_p
-
-print(p_value) # 0.028706043217603304
+print(coeffs)
