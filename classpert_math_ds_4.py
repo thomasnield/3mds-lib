@@ -441,7 +441,6 @@ class PDFandCDFAnimated(Scene):
         self.play(vt.animate.set_value(mean),run_time=1.5)
         self.wait()
 
-
 class PDFandCDFPieces(Scene):
     def construct(self):
         pdf = CoffeeNormalPDF()
@@ -473,15 +472,18 @@ class PDFandCDFPieces(Scene):
         projecting_area = always_redraw(lambda: pdf.ax.get_area(pdf.plt, x_range=(-3*std+mean, vt.get_value()), color=RED))
         self.add(projecting_line, projecting_area, horz_projecting_line)
 
+        # first piece up to x=16
         self.play(vt.animate.set_value(16))
-        area_16 = pdf.ax.get_area(pdf.plt, x_range=(-3*std+mean, 16), color=RED) \
+        area_16 = pdf.ax.get_area(pdf.plt, x_range=(-3*std+mean, 16), color=BLUE) \
             .move_to(projecting_area)
 
-        area_16.generate_target().scale(.5).to_edge(UR * 2)
+        area_16.generate_target().scale(.5).to_edge(UR * 1.5)
 
         self.wait()
         self.play(MoveToTarget(area_16))
         self.wait()
+
+        # second piece up to x=15
 
         subtract_sign = Rectangle(height=.125, width=1, fill_opacity=.8) \
             .next_to(area_16, DOWN, buff=.75)
@@ -494,24 +496,138 @@ class PDFandCDFPieces(Scene):
             .next_to(subtract_sign, DOWN, buff=.75) \
             .align_to(area_16, LEFT)
 
-        self.play(vt.animate.set_value(15))
+        area_15_16 = pdf.ax.get_area(pdf.plt, x_range=(15,16), color=BLUE) \
+            .move_to(projecting_area, aligned_edge=DR)
+
+        self.play(FadeIn(area_15_16), vt.animate.set_value(15))
         self.wait()
 
+        self.add(area_15_16)
         self.play(
             FadeIn(subtract_sign),
             MoveToTarget(area_15)
         )
         self.wait()
 
+        # third piece of the remaining area
         equals_sign = VGroup(subtract_sign.copy(), subtract_sign.copy()) \
             .arrange(DOWN) \
             .next_to(VGroup(area_15, area_16), DOWN, buff=.75)
 
+        area_15_16.generate_target() \
+            .scale(.5) \
+            .next_to(equals_sign, DOWN, buff=.75) \
+            .align_to(area_16, RIGHT)
 
         self.play(
             FadeIn(equals_sign)
         )
         self.wait()
+        self.add(area_15_16.copy())
+        self.play(
+            FadeIn(area_15_16.copy()),
+            FadeOut(projecting_area),
+            MoveToTarget(area_15_16),
+            FadeOut(horz_projecting_line),
+            FadeOut(projecting_line)
+        )
+        self.wait()
 
+class NormalCDFSciPy(Scene):
+    def construct(self):
+        raw = r"""from scipy.stats import norm
+
+mean = 14.005
+std = 0.955
+
+area_up_to_16 = norm.cdf(16, mean, std)
+area_up_to_15 = norm.cdf(15, mean, std)
+area_15_to_16 = area_up_to_16 - area_up_to_15
+
+print(area_up_to_16) # prints 0.9816463740613143
+print(area_up_to_15) # prints 0.8512674578504555
+print(area_15_to_16) # prints 0.13037891621085873
+"""
+
+        code = Code(code=raw, language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+class BabyNormalPDF(VGroup):
+    def __init__(self, *vmobjects, **kwargs):
+        super().__init__(*vmobjects, **kwargs)
+        mean = 9
+        std = 1.6
+        self.mean, self.std = mean, std
+        self.x_lower, self.x_upper = mean - 3 * std, mean + 3 * std
+
+        self.ax = Axes(x_range=(self.x_lower, self.x_upper, std),
+                       y_range=(0, .3, .1),
+                       tips=False,
+                       x_axis_config={"include_numbers" : False,
+                                 "numbers_to_include" : (mean, mean+std, mean+std*2, mean-std, mean-2*std
+                                                         )
+                                 },
+                       y_axis_config={"include_numbers": False,
+                                      "numbers_to_include": (.1, .2, .3
+                                                             )
+                                      }
+                       )
+        self.plt = self.ax.plot(lambda x: scipy.stats.norm.pdf(x,mean,std), color=YELLOW)
+
+        self.dots = VGroup(*[Dot(self.ax.c2p(_x,0), color=BLUE) for _x in x])
+        grp = VGroup(self.ax, self.plt)
+
+        self.add(grp)
+
+
+class BabyFormulaPDF(Scene):
+    def construct(self):
+        pdf = BabyNormalPDF()
+        lower_x_95 = norm.ppf(.025, pdf.mean, pdf.std)
+        upper_x_95 = norm.ppf(.975, pdf.mean, pdf.std)
+
+        center_area_95 = pdf.ax.get_area(pdf.plt,x_range=(lower_x_95, upper_x_95), color=BLUE)
+        center_area_95_lbl = MathTex(.95).move_to(center_area_95)
+
+        x = 5.5
+        line = DashedLine(start=pdf.ax.c2p(x,0),
+                          end=pdf.ax.c2p(x, pdf.plt.underlying_function(x) + .1),
+                          color=RED
+                          )
+
+        p_value_lower = pdf.ax.get_area(pdf.plt,x_range=(-3*pdf.std+pdf.mean, x), color=RED)
+        p_value_upper = pdf.ax.get_area(pdf.plt,x_range=(upper_x_95 + (lower_x_95-x), 3*pdf.std+pdf.mean), color=RED)
+        p_value_lbl = MathTex("p = 0.0287",color=RED).next_to(line, UP).shift(2*UP)
+        grp = VGroup(pdf, center_area_95_lbl, center_area_95, line, p_value_lower, p_value_upper, p_value_lbl)
+
+        mobj_to_svg(grp, h_padding=1, w_padding=1)
+
+        self.add(grp)
+
+
+class BabyFormulaTwoTailScipy(Scene):
+    def construct(self):
+        raw = r"""from scipy.stats import norm
+
+# Conventional formula has mean of 9 colic hours
+# with 1.6 standard deviations
+mean = 9
+std = 1.6
+
+# Experimental formula showed 5.5 hours of colic
+x = 5.5
+
+# Probability of 5.5
+tail_p = norm.cdf(x, mean, std)
+
+# Get p-value of both tails
+p_value = 2*tail_p
+
+print(p_value) # 0.028706043217603304
+"""
+
+        code = Code(code=raw, language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
 if __name__ == "__main__":
-    render_scenes(q="l", play=True, scene_names=['PDFandCDFPieces'])
+    render_scenes(q="l", play=True, scene_names=['BabyFormulaPDF'])
