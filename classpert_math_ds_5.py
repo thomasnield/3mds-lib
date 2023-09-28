@@ -213,5 +213,98 @@ class InverseMatrixTechnique(Scene):
         tex = MathTex(r"b = (X^T \cdot X)^{-1} \cdot X^T \cdot Y")
         mobj_to_svg(tex)
 
+
+class TransposeMatrix(Scene):
+    def construct(self):
+        m = sp.Matrix([[1,2],[3,4]])
+        grp = VGroup(
+            MathTex("A = ", sp.latex(m)),
+            MathTex("A^{-1} = ", sp.latex(m.transpose()))
+        )
+        grp.arrange(RIGHT, buff=1)
+        mobj_to_svg(grp)
+
+class InverseMatrixTechniqueCode(Scene):
+    def construct(self):
+        raw = """import numpy as np
+from numpy.linalg import inv
+
+x = np.array([84,37,58,52,47,78,93,15,12,60])
+y = np.array([155.8,102.0,164.8,120.9,86.8,93.0,201.6,25.2,14.7,118.6])
+
+x_1 = np.vstack([x, np.ones(len(x))]).T
+
+coeffs = inv(x_1.T @ x_1) @ (x_1.T @ y)
+
+print(coeffs) # [1.85619082 8.84817212]"""
+
+        code = Code(code=raw, language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+
+class QRFormula(Scene):
+    def construct(self):
+        qr_tex = MathTex(r"X = Q \cdot R")
+        qr_solve = MathTex(r"b = R^{-1} \cdot Q^{T} \cdot Y")
+
+        mobj_to_svg(qr_solve)
+
+class QRTechniqueCode(Scene):
+    def construct(self):
+        raw = """import numpy as np
+from numpy.linalg import qr, inv
+
+x = np.array([84,37,58,52,47,78,93,15,12,60])
+y = np.array([155.8,102.0,164.8,120.9,86.8,93.0,201.6,25.2,14.7,118.6])
+
+x_1 = np.vstack([x, np.ones(len(x))]).T
+
+Q, R = qr(x_1)
+coeffs = inv(R) @ Q.transpose() @ y
+
+print(coeffs) # [1.85619082 8.84817212]"""
+
+        code = Code(code=raw, language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+
+class LinearRegressionLoss(ThreeDScene):
+    def construct(self):
+        self.set_camera_orientation(phi=70 * DEGREES, theta=-70 * DEGREES, zoom=.5)
+
+        ax = ThreeDAxes(x_range=(-10, 10, 1), y_range=(-10, 10, 1), z_range=(-1_000_000, 5_000_000, 1_000_000))
+
+        _x = np.array([84,37,58,52,47,78,93,15,12,60])
+        _y = np.array([155.8,102.0,164.8,120.9,86.8,93.0,201.6,25.2,14.7,118.6])
+
+        m, b, i, n = sp.symbols('m b i n')
+        x, y = sp.symbols('x y', cls=sp.Function)
+
+        _sum_of_squares = sp.Sum((m * x(i) + b - y(i)) ** 2, (i, 0, n)) \
+            .subs(n, len(_x) - 1).doit() \
+            .replace(x, lambda i: _x[i]) \
+            .replace(y, lambda i: _y[i])
+
+        sum_of_squares = sp.lambdify([m, b], _sum_of_squares)
+
+        def param_loss(u, v):
+            m = u
+            b = v
+            s = sum_of_squares(m, b)
+            return ax.c2p(m, b, s)
+
+        loss_plane = Surface(
+            param_loss,
+            resolution=(42, 42),
+            u_range=[-10, +10],
+            v_range=[-10, +10],
+            fill_opacity=.5,
+            stroke_color=BLUE,
+            fill_color=BLUE
+        )
+
+        self.add(ax, loss_plane)
+
+
 if __name__ == "__main__":
-    render_scenes(q="l", play=False, scene_names=['InverseMatrixTechnique'])
+    render_scenes(q="k", play=True, scene_names=['LinearRegressionLoss'])
