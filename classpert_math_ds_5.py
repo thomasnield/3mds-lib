@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import sympy as sp
 import scipy
-from sklearn.linear_model import LinearRegression
+from sklearn.linear_model import LinearRegression, LogisticRegression
 import math
 
 from threemds.utils import render_scenes, file_to_base_64, mobj_to_svg, mobj_to_png
@@ -305,6 +305,233 @@ class LinearRegressionLoss(ThreeDScene):
 
         self.add(ax, loss_plane)
 
+class SymPyDerivatives(Scene):
+    def construct(self):
+        code = Code(code="""from sympy import *
+
+m, b, i, n = symbols('m b i n')
+x, y = symbols('x y', cls=Function)
+
+sum_of_squares = Sum((m*x(i) + b - y(i)) ** 2, (i, 0, n))
+
+d_m = diff(sum_of_squares, m)
+d_b = diff(sum_of_squares, b)
+print(d_m)
+print(d_b)
+
+# OUTPUTS
+# Sum(2*(b + m*x(i) - y(i))*x(i), (i, 0, n))
+# Sum(2*b + 2*m*x(i) - 2*y(i), (i, 0, n))""", language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+
+class DerivativesMandB(Scene):
+    def construct(self):
+
+        tex = MathTex(r"\frac{\partial}{\partial m} &= \sum_{i=0}^{n} 2(b + mx_i - y_i)x_i \\",
+                    r"\frac{\partial}{\partial b} &= \sum_{i=0}^{n} 2 b + 2 m x_i - 2 y_i")
+
+        mobj_to_svg(tex)
+
+class GradientDescentCode(Scene):
+    def construct(self):
+        code = Code(code="""import numpy as np
+
+x = np.array([84,37,58,52,47,78,93,15,12,60])
+y = np.array([155.8,102.0,164.8,120.9,86.8,93.0,201.6,25.2,14.7,118.6])
+
+# Building the model
+m, b, L, iterations = 0.0, 0.0, .00001, 500_000
+
+# Perform Gradient Descent
+for i in range(iterations):
+    # slope with respect to m
+    d_m = np.sum(2 * (b + m*x - y) * x)
+    # slope with respect to b
+    d_b = np.sum(2*b + 2*m*x - 2*y)
+    # update m and ba
+    m -= L * d_m
+    b -= L * d_b
+    print(f"y = {m}x + {b}")
+
+# last iteration prints
+# y = 1.8561908195210568x + 8.848172062832369""", language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+
+class LinearRegressionSklearn(Scene):
+    def construct(self):
+
+        code = Code(code="""import numpy as np
+from sklearn.linear_model import LinearRegression
+
+x = np.array([84,37,58,52,47,78,93,15,12,60])
+y = np.array([155.8,102.0,164.8,120.9,86.8,93.0,201.6,25.2,14.7,118.6])
+
+lr = LinearRegression().fit(x.reshape(-1, 1),y)
+
+m,b = lr.coef_[0], lr.intercept_
+
+# y = 1.8561908186503653x + 8.848172120340422
+print(f"y = {m}x + {b}")""", language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+
+class BinaryOutcomeTable(Scene):
+    def construct(self):
+        # data
+        x = np.array([7.8, 7.9, 4.0, 7.8, 6.4, 7.2, 6.6, 7.6, 4.9, 5.8, 4.8, 4.0, 4.4, 3.0, 2.1, 3.8, 2.5, 5.6, 3.7, 3.3, 3.4, 4.3, 3.4, 0.7])
+        y = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        tbl = Table([[str(_x), str(_y)] for _x,_y in zip(x,y)],
+                    col_labels=(Tex("x"), Tex("y")),
+                    include_outer_lines=True
+                    )
+
+        mobj_to_svg(tbl)
+
+class SimpleLogisticRegression(VGroup):
+    def __init__(self, *vmobjects, **kwargs):
+        super().__init__()
+
+        # data
+        x = np.array([7.8, 7.9, 4.0, 7.8, 6.4, 7.2, 6.6, 7.6, 4.9, 5.8, 4.8, 4.0, 4.4, 3.0, 2.1, 3.8, 2.5, 5.6, 3.7, 3.3, 3.4, 4.3, 3.4, 0.7])
+        y = np.array([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+
+        # axes, dots, and top line
+        ax = Axes(x_range=(x.min()-1, x.max()+1, 1),
+                  y_range=(0,1.25, .25),
+                  x_axis_config={
+                      "include_numbers" : True,
+                  },
+                  y_axis_config= {
+                      "include_numbers" : True
+                  }#,
+                  #x_length=7,
+                  #y_length=5,
+            )
+
+        lbls = VGroup(
+            Tex("Hours of Rain") \
+                .scale(.75) \
+                .next_to(ax, DOWN, buff=.5),
+
+            Tex("P(Flood)") \
+                .scale(.75) \
+                .rotate(90 * DEGREES) \
+                .next_to(ax, LEFT, buff=.5)
+        )
+
+        dots = VGroup(*[
+            Dot(ax.c2p(_x,_y), color=BLUE if _y == 1 else RED, radius=.1) for _x,_y in zip(x,y)
+        ])
+
+        top_line = DashedLine(start=ax.c2p(0,1), end=ax.c2p(x.max()+1,1), color=WHITE)
+
+        # logistic regression model and plot
+        lr_model = LogisticRegression(penalty=None)
+        lr_model.fit(x.reshape(-1, 1), y)
+
+        plot = ax.plot(lambda _x: 1.0 / (1.0 + math.exp(-(-7.73556604 + 1.68361151*_x))),
+                       color=YELLOW)
+
+        grp = VGroup(ax, top_line, plot, dots, lbls).scale(.9)
+
+        self.add(grp)
+
+        # likelihood lines
+        likelihood_lines = VGroup(*[
+            DashedLine(start=ax.c2p(_x, _y),
+                       end=ax.c2p(_x, plot.underlying_function(_x)),
+                       color=BLUE if _y == 1 else RED)
+                for d, _x, _y in zip(dots, x, y)
+        ])
+
+        likelihood_lines_normalized = VGroup(*[
+            DashedLine(start=ax.c2p(_x, 1),
+                       end=ax.c2p(_x, plot.underlying_function(_x)),
+                       color=BLUE if _y == 1 else RED)
+                for d, _x, _y in zip(dots, x, y)
+        ])
+
+        dots_normalized = VGroup(*[
+            d.copy().move_to(l.get_top()) for d,l in zip(dots, likelihood_lines_normalized)
+        ])
+
+        self.x, self.y, self.ax, self.dots, self.dots_normalized, \
+            self.top_line, self.plot, self.lr_model, self.likelihood_lines, \
+            self.likelihood_lines_normalized, self.axis_lbls = \
+            x, y, ax, dots, dots_normalized, top_line, plot, lr_model, likelihood_lines, likelihood_lines_normalized, lbls
+
+
+class BasicLogisticRegression(Scene):
+    def construct(self):
+        lr = SimpleLogisticRegression()
+
+
+        lookup_line_vert = DashedLine(start= lr.ax.c2p(5,0),
+                                      end = lr.ax.c2p(5, lr.plot.underlying_function(5)),
+                                      color=YELLOW)
+
+        lookup_line_horz = DashedLine(start = lr.ax.c2p(5, lr.plot.underlying_function(5)),
+                                      end= lr.ax.c2p(0, lr.plot.underlying_function(5)),
+                                      color=YELLOW)
+
+        y_lookup_lbl = MathTex(round(lr.plot.underlying_function(5), 2), color=YELLOW) \
+            .scale(.6) \
+            .next_to(lookup_line_horz, LEFT, buff=.1)
+
+        lr = VGroup(lr.ax, lr.top_line,
+                    lr.plot,
+                    lr.dots,
+                    lookup_line_vert,
+                    lookup_line_horz,
+                    lr.axis_lbls,
+                    y_lookup_lbl)
+
+        mobj_to_svg(lr,h_padding=2, w_padding=2)
+        self.add(lr)
+
+class LogisticRegressionFormula(Scene):
+    def construct(self):
+        tex = MathTex(r"L(x) = \frac{1}{1 + e^{-(mx + b)}")
+        mobj_to_svg(tex)
+
+class LogisticRegressionSklearn(Scene):
+    def construct(self):
+
+        code = Code(code="""import numpy as np
+from sklearn.linear_model import LogisticRegression
+
+x = np.array([7.8,7.9,4.0,7.8,6.4,7.2,6.6,7.6,4.9,5.8,4.8,4.0,
+              4.4,3.0,2.1,3.8,2.5,5.6,3.7,3.3,3.4,4.3,3.4,0.7])
+
+y = np.array([1,1,1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0])
+
+lr = LogisticRegression().fit(x.reshape(-1, 1),y)
+m,b = lr.coef_[0,0], lr.intercept_[0]
+
+# L(x) = 1 / (1 + e^(-(1.2436430952492856x + -5.798891442057214)
+print(f"L(x) = 1 / (1 + e^(-({m}x + {b})")""", language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
+
+class ReshapeCode(Scene):
+    def construct(self):
+
+        code = Code(code="""import numpy as np
+
+x = np.array([1, 2, 3])
+
+print(x) 
+# [1 2 3]
+
+print(x.reshape(-1,1))
+# [[1]
+#  [2]
+#  [3]]""", language="Python", font="Monospace", style="monokai", background="window")
+
+        mobj_to_svg(code)
 
 if __name__ == "__main__":
-    render_scenes(q="k", play=True, scene_names=['LinearRegressionLoss'])
+    render_scenes(q="l", play=False, scene_names=['ReshapeCode'])
