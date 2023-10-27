@@ -846,4 +846,4 @@ class NeuralNetworkScene(MovingCameraScene):
 
 
 if __name__ == "__main__":
-    render_scenes(q='l', gif=True, scene_names=['NeuralNetworkScene'])
+    render_scenes(q='k', gif=True, scene_names=['NeuralNetworkScene'])

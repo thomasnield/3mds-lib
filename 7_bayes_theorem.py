@@ -1,6 +1,7 @@
 
 from manim import *
-from threemds.utils import render_scenes
+from threemds.utils import render_scenes, mobj_to_svg
+
 
 class BayesTheorem(Scene):
     def construct(self):
@@ -71,10 +72,14 @@ class VideoGameHomicidalExample1(Scene):
         p_gamer_homicidal[1].set_color(RED)
         p_gamer_homicidal[3].set_color(BLUE)
 
+
         VGroup(p_homicidal_gamer.generate_target(), p_gamer_homicidal).arrange(DOWN, buff=.75)
 
         self.play(MoveToTarget(p_homicidal_gamer), Write(p_gamer_homicidal))
         self.wait()
+
+        mobj_to_svg(VGroup( p_gamer_homicidal, p_homicidal_gamer))
+
 
 class VideoGameHomicidalExample2(Scene):
     def construct(self):
@@ -92,6 +97,8 @@ class VideoGameHomicidalExample2(Scene):
         for m in stats:
             self.play(Write(m), lag_ratio=2)
             self.wait()
+
+        mobj_to_svg(VGroup(stats))
 
 
 
@@ -125,6 +132,9 @@ class VideoGameHomicidalExample3(Scene):
         self.wait()
         self.play(Circumscribe(p_solved))
         self.wait()
+
+        mobj_to_svg(VGroup(a_given_b, p_solve, p_solved))
+
 
 
 class VennDiagramBayes(MovingCameraScene):
@@ -242,4 +252,4 @@ class VennDiagramBayes(MovingCameraScene):
 
 
 if __name__ == "__main__":
-    render_scenes(q='k', scene_names=['VideoGameHomicidalExample2', 'VideoGameHomicidalExample1'])
+    render_scenes(q='k', scene_names=['VennDiagramBayes'])
